@@ -8,11 +8,15 @@ class Chapter {
 
   String title = "";
 
-  bool visited = false;
+  String url = "";
 
   int viewingImageIndex = -1;
 
   List<String> imageUrls = [];
 
+  DateTime createdAt = DateTime.now();
+
   var manga = IsarLink<Manga>();
+
+  bool visited() => viewingImageIndex != -1;
 }

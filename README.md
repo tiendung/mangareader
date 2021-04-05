@@ -8,6 +8,8 @@ https://blog.codemagic.io/flutter-state-management-with-riverpod/
 
 > The state that is shared across different widgets is known as the app state (sometimes also called shared state). This is where state management solutions help a lot.
 
+https://codewithandrea.com/videos/flutter-state-management-riverpod/
+
 
 https://github.com/Baseflow/flutter_cached_network_image
 
