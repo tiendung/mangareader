@@ -1,10 +1,11 @@
 import 'package:flutter/material.dart';
-import 'dart:math';
-import 'isar.g.dart';
-import 'manga_model.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'mangas_provider.dart';
 
 void main() {
-  runApp(MyApp());
+  runApp(ProviderScope(
+    child: MyApp(),
+  ));
 }
 
 class MyApp extends StatelessWidget {
@@ -16,52 +17,28 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home: MyHomePage(title: 'Manga Reader'),
+      home: MyHomePage(),
     );
   }
 }
 
-class MyHomePage extends StatefulWidget {
-  MyHomePage({Key? key, required this.title}) : super(key: key);
-  final String title;
-
+class MyHomePage extends ConsumerWidget {
   @override
-  _MyHomePageState createState() => _MyHomePageState();
-}
+  Widget build(BuildContext context, ScopedReader watch) {
+    final mangas = watch(mangasProvider);
+    // context.read(mangasProvider.notifier).refresh();
 
-class _MyHomePageState extends State<MyHomePage> {
-  var _mangas = <Manga>[];
+    void _handleRefreshPressed() async {
+      final mangasNotifier = context.read(mangasProvider.notifier);
+      await mangasNotifier.add();
+      mangasNotifier.refresh();
+    }
 
-  void _incrementCounter() async {
-    final isar = await openIsar();
-    final m = Manga()..title = "Amazing ${Random().nextInt(1000)}";
-    await isar.writeTxn((isar) async {
-      await isar.mangas.put(m);
-    });
-    final tmp = await isar.mangas.where().findAll();
-    setState(() {
-      // This call to setState tells the Flutter framework that something has
-      // changed in this State, which causes it to rerun the build method below
-      // so that the display can reflect the updated values. If we changed
-      // _counter without calling setState(), then the build method would not be
-      // called again, and so nothing would appear to happen.
-      _mangas = tmp;
-    });
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    // This method is rerun every time setState is called, for instance as done
-    // by the _incrementCounter method above.
-    //
-    // The Flutter framework has been optimized to make rerunning build methods
-    // fast, so that you can just rebuild anything that needs updating rather
-    // than having to individually change instances of widgets.
     return Scaffold(
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: Text(widget.title),
+        title: Text("Manga"),
       ),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
@@ -82,12 +59,12 @@ class _MyHomePageState extends State<MyHomePage> {
           // axis because Columns are vertical (the cross axis would be
           // horizontal).
           mainAxisAlignment: MainAxisAlignment.center,
-          children: _mangas.map((m) => Text(m.title)).toList(),
+          children: mangas.map((m) => Text(m.title)).toList(),
         ),
       ),
       floatingActionButton: FloatingActionButton(
-        onPressed: _incrementCounter,
-        tooltip: 'Increment',
+        onPressed: _handleRefreshPressed,
+        tooltip: 'Refresh',
         child: Icon(Icons.add),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );

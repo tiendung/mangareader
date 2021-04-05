@@ -11,8 +11,8 @@ import 'package:isar/src/isar_interface.dart';
 import 'package:isar/src/query_builder.dart';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as p;
-import 'chapter_model.dart';
-import 'manga_model.dart';
+import 'chapter_data.dart';
+import 'manga_data.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/widgets.dart';
 

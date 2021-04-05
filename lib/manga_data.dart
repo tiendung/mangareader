@@ -1,5 +1,5 @@
 import 'package:isar/isar.dart';
-import 'chapter_model.dart';
+import 'chapter_data.dart';
 
 @Collection()
 class Manga {
