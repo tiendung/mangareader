@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:cached_network_image/cached_network_image.dart';
 import 'mangas_provider.dart';
+import 'manga_screen.dart';
 
 void main() {
   runApp(ProviderScope(
@@ -28,38 +30,62 @@ class MyHomePage extends ConsumerWidget {
     final mangas = watch(mangasProvider);
     // context.read(mangasProvider.notifier).refresh();
 
-    void _handleRefreshPressed() async {
+    void _handleRefreshPressed() {
       final mangasNotifier = context.read(mangasProvider.notifier);
-      await mangasNotifier.add();
-      mangasNotifier.refresh();
+      mangasNotifier.add();
     }
 
     return Scaffold(
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: Text("Manga"),
+        title: Text("Mangas"),
       ),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
         // in the middle of the parent.
-        child: Column(
-          // Column is also a layout widget. It takes a list of children and
-          // arranges them vertically. By default, it sizes itself to fit its
-          // children horizontally, and tries to be as tall as its parent.
-          //
-          // Invoke "debug painting" (press "p" in the console, choose the
-          // "Toggle Debug Paint" action from the Flutter Inspector in Android
-          // Studio, or the "Toggle Debug Paint" command in Visual Studio Code)
-          // to see the wireframe for each widget.
-          //
-          // Column has various properties to control how it sizes itself and
-          // how it positions its children. Here we use mainAxisAlignment to
-          // center the children vertically; the main axis here is the vertical
-          // axis because Columns are vertical (the cross axis would be
-          // horizontal).
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: mangas.map((m) => Text(m.title)).toList(),
+        child: GridView.count(
+          padding: EdgeInsets.all(10.0),
+          crossAxisSpacing: 10,
+          mainAxisSpacing: 10,
+          crossAxisCount: 2,
+          children: mangas
+              .map((manga) => GestureDetector(
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => MangaScreen(manga: manga),
+                      ),
+                    );
+                  },
+                  child: Container(
+                      padding: EdgeInsets.all(5.0),
+                      decoration: BoxDecoration(
+                        image: DecorationImage(
+                          image:
+                              CachedNetworkImageProvider(manga.coverImageUrl),
+                          fit: BoxFit.cover,
+                        ),
+                      ),
+                      child: Opacity(
+                        opacity: 0.9,
+                        child: Align(
+                          alignment: Alignment.bottomLeft,
+                          child: Text(
+                            '${manga.title} (${manga.chapters.length})',
+                            // textAlign: TextAlign.center,
+                            // overflow: TextOverflow.ellipsis,
+                            style: TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 20,
+                              backgroundColor: Colors.black,
+                              color: Colors.white,
+                            ),
+                          ),
+                        ),
+                      ))))
+              .toList(),
         ),
       ),
       floatingActionButton: FloatingActionButton(

@@ -22,7 +22,7 @@ final _isar = <String, Isar>{};
 const _utf8Encoder = Utf8Encoder();
 
 final _schema =
-    '[{"name":"Chapter","idProperty":"id","properties":[{"name":"id","type":3},{"name":"title","type":5},{"name":"viewingImageIndex","type":3},{"name":"imageUrls","type":11},{"name":"createdAt","type":3}],"indexes":[],"links":[{"name":"manga","collection":"Manga"}]},{"name":"Manga","idProperty":"id","properties":[{"name":"id","type":3},{"name":"title","type":5},{"name":"description","type":5},{"name":"url","type":5},{"name":"createdAt","type":3},{"name":"updatedAt","type":3}],"indexes":[{"unique":false,"replace":false,"properties":[{"name":"title","indexType":2,"caseSensitive":true}]}],"links":[]}]';
+    '[{"name":"Chapter","idProperty":"id","properties":[{"name":"id","type":3},{"name":"title","type":5},{"name":"url","type":5},{"name":"viewingImageIndex","type":3},{"name":"imageUrls","type":11},{"name":"createdAt","type":3}],"indexes":[],"links":[{"name":"manga","collection":"Manga"}]},{"name":"Manga","idProperty":"id","properties":[{"name":"id","type":3},{"name":"title","type":5},{"name":"coverImageUrl","type":5},{"name":"url","type":5},{"name":"createdAt","type":3},{"name":"updatedAt","type":3}],"indexes":[{"unique":false,"replace":false,"properties":[{"name":"title","indexType":2,"caseSensitive":true}]}],"links":[]}]';
 
 final _chapterCollection = <String, IsarCollection<Chapter>>{};
 final _mangaCollection = <String, IsarCollection<Manga>>{};
@@ -77,9 +77,9 @@ Future<Isar> openIsar(
   final collectionPtrPtr = malloc<Pointer>();
   {
     nCall(IC.isar_get_collection(isarPtr, collectionPtrPtr, 0));
-    final propertyOffsetsPtr = malloc<Uint32>(5);
+    final propertyOffsetsPtr = malloc<Uint32>(6);
     IC.isar_get_property_offsets(collectionPtrPtr.value, propertyOffsetsPtr);
-    final propertyOffsets = propertyOffsetsPtr.asTypedList(5).toList();
+    final propertyOffsets = propertyOffsetsPtr.asTypedList(6).toList();
     malloc.free(propertyOffsetsPtr);
     _chapterCollection[name] = IsarCollectionImpl(
       isar,
@@ -150,20 +150,23 @@ class _ChapterAdapter extends TypeAdapter<Chapter> {
     final value1 = object.title;
     final _title = _utf8Encoder.convert(value1);
     dynamicSize += _title.length;
-    final value2 = object.viewingImageIndex;
-    final _viewingImageIndex = value2;
-    final value3 = object.imageUrls;
-    dynamicSize += (value3.length) * 8;
-    List<Uint8List?>? bytesList3;
-    for (var str in value3) {
+    final value2 = object.url;
+    final _url = _utf8Encoder.convert(value2);
+    dynamicSize += _url.length;
+    final value3 = object.viewingImageIndex;
+    final _viewingImageIndex = value3;
+    final value4 = object.imageUrls;
+    dynamicSize += (value4.length) * 8;
+    List<Uint8List?>? bytesList4;
+    for (var str in value4) {
       final bytes = _utf8Encoder.convert(str);
-      bytesList3?.add(bytes);
+      bytesList4?.add(bytes);
       dynamicSize += bytes.length;
     }
-    final _imageUrls = bytesList3;
-    final value4 = object.createdAt;
-    final _createdAt = value4;
-    final size = dynamicSize + 42;
+    final _imageUrls = bytesList4;
+    final value5 = object.createdAt;
+    final _createdAt = value5;
+    final size = dynamicSize + 50;
 
     late int bufferSize;
     if (existingBufferSize != null) {
@@ -180,12 +183,13 @@ class _ChapterAdapter extends TypeAdapter<Chapter> {
     }
     rawObj.buffer_length = size;
     final buffer = rawObj.buffer.asTypedList(size);
-    final writer = BinaryWriter(buffer, 42);
+    final writer = BinaryWriter(buffer, 50);
     writer.writeLong(offsets[0], _id);
     writer.writeBytes(offsets[1], _title);
-    writer.writeLong(offsets[2], _viewingImageIndex);
-    writer.writeStringList(offsets[3], _imageUrls);
-    writer.writeDateTime(offsets[4], _createdAt);
+    writer.writeBytes(offsets[2], _url);
+    writer.writeLong(offsets[3], _viewingImageIndex);
+    writer.writeStringList(offsets[4], _imageUrls);
+    writer.writeDateTime(offsets[5], _createdAt);
     if (!(object.manga as IsarLinkImpl).attached) {
       (object.manga as IsarLinkImpl).attach(
         collection,
@@ -204,9 +208,10 @@ class _ChapterAdapter extends TypeAdapter<Chapter> {
     final object = Chapter();
     object.id = reader.readLongOrNull(offsets[0]);
     object.title = reader.readString(offsets[1]);
-    object.viewingImageIndex = reader.readLong(offsets[2]);
-    object.imageUrls = reader.readStringList(offsets[3]) ?? [];
-    object.createdAt = reader.readDateTime(offsets[4]);
+    object.url = reader.readString(offsets[2]);
+    object.viewingImageIndex = reader.readLong(offsets[3]);
+    object.imageUrls = reader.readStringList(offsets[4]) ?? [];
+    object.createdAt = reader.readDateTime(offsets[5]);
     object.manga = IsarLinkImpl()
       ..attach(
         collection,
@@ -231,9 +236,9 @@ class _MangaAdapter extends TypeAdapter<Manga> {
     final value1 = object.title;
     final _title = _utf8Encoder.convert(value1);
     dynamicSize += _title.length;
-    final value2 = object.description;
-    final _description = _utf8Encoder.convert(value2);
-    dynamicSize += _description.length;
+    final value2 = object.coverImageUrl;
+    final _coverImageUrl = _utf8Encoder.convert(value2);
+    dynamicSize += _coverImageUrl.length;
     final value3 = object.url;
     final _url = _utf8Encoder.convert(value3);
     dynamicSize += _url.length;
@@ -261,7 +266,7 @@ class _MangaAdapter extends TypeAdapter<Manga> {
     final writer = BinaryWriter(buffer, 50);
     writer.writeLong(offsets[0], _id);
     writer.writeBytes(offsets[1], _title);
-    writer.writeBytes(offsets[2], _description);
+    writer.writeBytes(offsets[2], _coverImageUrl);
     writer.writeBytes(offsets[3], _url);
     writer.writeDateTime(offsets[4], _createdAt);
     writer.writeDateTime(offsets[5], _updatedAt);
@@ -283,7 +288,7 @@ class _MangaAdapter extends TypeAdapter<Manga> {
     final object = Manga();
     object.id = reader.readLongOrNull(offsets[0]);
     object.title = reader.readString(offsets[1]);
-    object.description = reader.readString(offsets[2]);
+    object.coverImageUrl = reader.readString(offsets[2]);
     object.url = reader.readString(offsets[3]);
     object.createdAt = reader.readDateTime(offsets[4]);
     object.updatedAt = reader.readDateTime(offsets[5]);
@@ -673,11 +678,84 @@ extension ChapterQueryFilter on QueryBuilder<Chapter, QFilterCondition> {
     ));
   }
 
+  QueryBuilder<Chapter, QAfterFilterCondition> urlEqualTo(String value,
+      {bool caseSensitive = true}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Eq,
+      2,
+      'String',
+      lower: value,
+      upper: value,
+      caseSensitive: caseSensitive,
+    ));
+  }
+
+  QueryBuilder<Chapter, QAfterFilterCondition> urlIn(List<String> values,
+      {bool caseSensitive = true}) {
+    return group((q) {
+      for (var i = 0; i < values.length; i++) {
+        if (i == values.length - 1) {
+          return q.urlEqualTo(values[i], caseSensitive: caseSensitive);
+        } else {
+          q = q.urlEqualTo(values[i], caseSensitive: caseSensitive).or();
+        }
+      }
+      throw 'Empty values is unsupported.';
+    });
+  }
+
+  QueryBuilder<Chapter, QAfterFilterCondition> urlStartsWith(String value,
+      {bool caseSensitive = true}) {
+    final convertedValue = value;
+    return addFilterCondition(QueryCondition(
+      ConditionType.StartsWith,
+      2,
+      'String',
+      lower: convertedValue,
+      caseSensitive: caseSensitive,
+    ));
+  }
+
+  QueryBuilder<Chapter, QAfterFilterCondition> urlEndsWith(String value,
+      {bool caseSensitive = true}) {
+    final convertedValue = value;
+    return addFilterCondition(QueryCondition(
+      ConditionType.EndsWith,
+      2,
+      'String',
+      lower: convertedValue,
+      caseSensitive: caseSensitive,
+    ));
+  }
+
+  QueryBuilder<Chapter, QAfterFilterCondition> urlContains(String value,
+      {bool caseSensitive = true}) {
+    final convertedValue = value;
+    return addFilterCondition(QueryCondition(
+      ConditionType.Contains,
+      2,
+      'String',
+      lower: convertedValue,
+      caseSensitive: caseSensitive,
+    ));
+  }
+
+  QueryBuilder<Chapter, QAfterFilterCondition> urlMatches(String pattern,
+      {bool caseSensitive = true}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Matches,
+      2,
+      'String',
+      lower: pattern,
+      caseSensitive: caseSensitive,
+    ));
+  }
+
   QueryBuilder<Chapter, QAfterFilterCondition> viewingImageIndexEqualTo(
       int value) {
     return addFilterCondition(QueryCondition(
       ConditionType.Eq,
-      2,
+      3,
       'Long',
       lower: value,
       upper: value,
@@ -703,7 +781,7 @@ extension ChapterQueryFilter on QueryBuilder<Chapter, QFilterCondition> {
       {bool include = false}) {
     return addFilterCondition(QueryCondition(
       ConditionType.Gt,
-      2,
+      3,
       'Long',
       lower: value,
       includeLower: include,
@@ -715,7 +793,7 @@ extension ChapterQueryFilter on QueryBuilder<Chapter, QFilterCondition> {
       {bool include = false}) {
     return addFilterCondition(QueryCondition(
       ConditionType.Lt,
-      2,
+      3,
       'Long',
       upper: value,
       includeUpper: include,
@@ -727,7 +805,7 @@ extension ChapterQueryFilter on QueryBuilder<Chapter, QFilterCondition> {
       {bool includeLower = true, bool includeUpper = true}) {
     return addFilterCondition(QueryCondition(
       ConditionType.Between,
-      2,
+      3,
       'Long',
       lower: lower,
       includeLower: includeLower,
@@ -740,7 +818,7 @@ extension ChapterQueryFilter on QueryBuilder<Chapter, QFilterCondition> {
       DateTime value) {
     return addFilterCondition(QueryCondition(
       ConditionType.Eq,
-      4,
+      5,
       'DateTime',
       lower: value,
       upper: value,
@@ -766,7 +844,7 @@ extension ChapterQueryFilter on QueryBuilder<Chapter, QFilterCondition> {
       {bool include = false}) {
     return addFilterCondition(QueryCondition(
       ConditionType.Gt,
-      4,
+      5,
       'DateTime',
       lower: value,
       includeLower: include,
@@ -777,7 +855,7 @@ extension ChapterQueryFilter on QueryBuilder<Chapter, QFilterCondition> {
       {bool include = false}) {
     return addFilterCondition(QueryCondition(
       ConditionType.Lt,
-      4,
+      5,
       'DateTime',
       upper: value,
       includeUpper: include,
@@ -789,7 +867,7 @@ extension ChapterQueryFilter on QueryBuilder<Chapter, QFilterCondition> {
       {bool includeLower = true, bool includeUpper = true}) {
     return addFilterCondition(QueryCondition(
       ConditionType.Between,
-      4,
+      5,
       'DateTime',
       lower: lower,
       includeLower: includeLower,
@@ -941,7 +1019,7 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> descriptionEqualTo(String value,
+  QueryBuilder<Manga, QAfterFilterCondition> coverImageUrlEqualTo(String value,
       {bool caseSensitive = true}) {
     return addFilterCondition(QueryCondition(
       ConditionType.Eq,
@@ -953,15 +1031,17 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> descriptionIn(List<String> values,
+  QueryBuilder<Manga, QAfterFilterCondition> coverImageUrlIn(
+      List<String> values,
       {bool caseSensitive = true}) {
     return group((q) {
       for (var i = 0; i < values.length; i++) {
         if (i == values.length - 1) {
-          return q.descriptionEqualTo(values[i], caseSensitive: caseSensitive);
+          return q.coverImageUrlEqualTo(values[i],
+              caseSensitive: caseSensitive);
         } else {
           q = q
-              .descriptionEqualTo(values[i], caseSensitive: caseSensitive)
+              .coverImageUrlEqualTo(values[i], caseSensitive: caseSensitive)
               .or();
         }
       }
@@ -969,7 +1049,8 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
     });
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> descriptionStartsWith(String value,
+  QueryBuilder<Manga, QAfterFilterCondition> coverImageUrlStartsWith(
+      String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
     return addFilterCondition(QueryCondition(
@@ -981,7 +1062,7 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> descriptionEndsWith(String value,
+  QueryBuilder<Manga, QAfterFilterCondition> coverImageUrlEndsWith(String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
     return addFilterCondition(QueryCondition(
@@ -993,7 +1074,7 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> descriptionContains(String value,
+  QueryBuilder<Manga, QAfterFilterCondition> coverImageUrlContains(String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
     return addFilterCondition(QueryCondition(
@@ -1005,7 +1086,8 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> descriptionMatches(String pattern,
+  QueryBuilder<Manga, QAfterFilterCondition> coverImageUrlMatches(
+      String pattern,
       {bool caseSensitive = true}) {
     return addFilterCondition(QueryCondition(
       ConditionType.Matches,
@@ -1251,16 +1333,20 @@ extension ChapterQueryWhereDistinct on QueryBuilder<Chapter, QDistinct> {
     return addDistinctByInternal(1);
   }
 
-  QueryBuilder<Chapter, QDistinct> distinctByViewingImageIndex() {
+  QueryBuilder<Chapter, QDistinct> distinctByUrl() {
     return addDistinctByInternal(2);
   }
 
-  QueryBuilder<Chapter, QDistinct> distinctByImageUrls() {
+  QueryBuilder<Chapter, QDistinct> distinctByViewingImageIndex() {
     return addDistinctByInternal(3);
   }
 
-  QueryBuilder<Chapter, QDistinct> distinctByCreatedAt() {
+  QueryBuilder<Chapter, QDistinct> distinctByImageUrls() {
     return addDistinctByInternal(4);
+  }
+
+  QueryBuilder<Chapter, QDistinct> distinctByCreatedAt() {
+    return addDistinctByInternal(5);
   }
 }
 
@@ -1273,7 +1359,7 @@ extension MangaQueryWhereDistinct on QueryBuilder<Manga, QDistinct> {
     return addDistinctByInternal(1);
   }
 
-  QueryBuilder<Manga, QDistinct> distinctByDescription() {
+  QueryBuilder<Manga, QDistinct> distinctByCoverImageUrl() {
     return addDistinctByInternal(2);
   }
 
@@ -1317,6 +1403,7 @@ class _GeneratedIsarInterface implements IsarInterface {
       return {
         'id': object.id,
         'title': object.title,
+        'url': object.url,
         'viewingImageIndex': object.viewingImageIndex,
         'imageUrls': object.imageUrls,
         'createdAt': object.createdAt,
@@ -1326,7 +1413,7 @@ class _GeneratedIsarInterface implements IsarInterface {
       return {
         'id': object.id,
         'title': object.title,
-        'description': object.description,
+        'coverImageUrl': object.coverImageUrl,
         'url': object.url,
         'createdAt': object.createdAt,
         'updatedAt': object.updatedAt,

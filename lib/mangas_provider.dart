@@ -19,10 +19,17 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
   MangasNotifier() : super([Manga()..title = "Loading mangas ..."]);
 
   Future<void> add() async {
-    if (mangaUrls.length == 0) return;
-
+    if (state.length >= 6) {
+      final isar = await openIsar();
+      await isar.writeTxn((isar) async {
+        await isar.chapters.where().deleteAll();
+        await isar.mangas.where().deleteAll();
+      });
+      state = [];
+      return;
+    }
     final manga = Manga();
-    manga.url = mangaUrls.removeLast();
+    manga.url = mangaUrls[state.length % mangaUrls.length];
     await manga.crawl();
     final isar = await openIsar();
     await isar.writeTxn((isar) async {
@@ -30,10 +37,21 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
       await isar.mangas.put(manga);
       await manga.chapters.saveChanges();
     });
+    state = [...state, manga];
+    manga.chapters.forEach((c) {
+      c.crawl();
+    });
+    isar.writeTxn((isar) async {
+      await manga.chapters.saveChanges();
+    });
   }
 
   Future<void> refresh() async {
     final isar = await openIsar();
-    state = await isar.mangas.where().findAll();
+    final mangas = await isar.mangas.where().findAll();
+    mangas.forEach((manga) async {
+      await manga.chapters.load();
+    });
+    state = mangas;
   }
 }

@@ -1,7 +1,6 @@
 import 'package:isar/isar.dart';
 import 'chapter_data.dart';
 import 'package:dio/dio.dart';
-import 'isar.g.dart';
 
 @Collection()
 class Manga {
@@ -11,7 +10,7 @@ class Manga {
   @Index(indexType: IndexType.words) // Search index
   String title = "";
 
-  String description = "";
+  String coverImageUrl = "";
 
   String url = "";
 
@@ -23,9 +22,6 @@ class Manga {
 
   Future<void> crawl() async {
     var response = await Dio().get(url); // https://manganelo.com/manga/go922760
-    // <a rel="nofollow" class="chapter-name text-nowrap"
-    // href="https://manganelo.com/chapter/go922760/chapter_76"
-    // title="The Great Mage Returns After 4000 Years chapter Chapter 76">Chapter 76</a>
     final str = response.data.toString();
     final exp = RegExp(r'class="chapter-name.+?href="(.+?)".+?>(.+?)</a>');
     Iterable<RegExpMatch> matches = exp.allMatches(str);
@@ -39,7 +35,8 @@ class Manga {
         chapters.add(c);
       }
     }
-
-    title = RegExp(r'<h1>(.+?)</h1>').allMatches(str).first[1]!;
+    title = RegExp(r'<h1>(.+?)</h1>').firstMatch(str)![1]!;
+    // <img class="img-loading" src="https://avt.mkklcdnv6temp.com/7/f/21-1588309436.jpg" alt="The Great Mage Returns After 4000 Years"
+    coverImageUrl = RegExp(r'src="(.+?jpg)" alt="').firstMatch(str)![1]!;
   }
 }
