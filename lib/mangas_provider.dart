@@ -7,11 +7,14 @@ final mangasProvider = StateNotifierProvider<MangasNotifier, List<Manga>>(
     (ref) => MangasNotifier()..refresh());
 
 final mangaUrls = [
+  'https://manganelo.com/manga/gc923951',
   'https://manganelo.com/manga/go922760',
   'https://manganelo.com/manga/pn918005',
   'https://manganelo.com/manga/ijhr296321559609648',
   'https://manganelo.com/manga/zu917722',
   'https://manganelo.com/manga/lg924896',
+  'https://manganelo.com/manga/pe922986',
+  'https://manganelo.com/manga/vf922819',
 ];
 
 // https://github.com/rrousselGit/river_pod/blob/master/examples/todos/lib/todo.dart
@@ -19,7 +22,7 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
   MangasNotifier() : super([Manga()..title = "Loading mangas ..."]);
 
   Future<void> add() async {
-    if (state.length >= 6) {
+    if (state.length >= 9) {
       final isar = await openIsar();
       await isar.writeTxn((isar) async {
         await isar.chapters.where().deleteAll();
@@ -38,12 +41,12 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
       await manga.chapters.saveChanges();
     });
     state = [...state, manga];
-    manga.chapters.forEach((c) {
-      c.crawl();
-    });
-    isar.writeTxn((isar) async {
-      await manga.chapters.saveChanges();
-    });
+    // manga.chapters.forEach((c) {
+    //   c.crawl();
+    // });
+    // isar.writeTxn((isar) async {
+    //   await manga.chapters.saveChanges();
+    // });
   }
 
   Future<void> refresh() async {
