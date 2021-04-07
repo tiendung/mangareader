@@ -135,10 +135,10 @@ class _MangaAdapter extends TypeAdapter<Manga> {
     dynamicSize += _url.length;
     final value4 = object.chapterUrls;
     dynamicSize += (value4.length) * 8;
-    List<Uint8List?>? bytesList4;
+    List<Uint8List> bytesList4 = [];
     for (var str in value4) {
       final bytes = _utf8Encoder.convert(str);
-      bytesList4?.add(bytes);
+      bytesList4.add(bytes);
       dynamicSize += bytes.length;
     }
     final _chapterUrls = bytesList4;
