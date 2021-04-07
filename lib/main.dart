@@ -31,9 +31,18 @@ class MyHomePage extends ConsumerWidget {
     final mangas = watch(mangasProvider);
     // context.read(mangasProvider.notifier).refresh();
 
-    void _handleRefreshPressed() {
+    void _handleRefreshPressed() async {
       final mangasNotifier = context.read(mangasProvider.notifier);
-      mangasNotifier.add();
+      await mangasNotifier.update(1);
+      mangasNotifier.load();
+      await mangasNotifier.update(2);
+      mangasNotifier.load();
+      await mangasNotifier.update(3);
+      mangasNotifier.load();
+      await mangasNotifier.update(4);
+      mangasNotifier.load();
+      await mangasNotifier.update(5);
+      mangasNotifier.load();
     }
 
     return Scaffold(
@@ -49,7 +58,8 @@ class MyHomePage extends ConsumerWidget {
           padding: EdgeInsets.all(10.0),
           crossAxisSpacing: 10,
           mainAxisSpacing: 10,
-          crossAxisCount: 2,
+          crossAxisCount: 3,
+          childAspectRatio: 225.0 / 334.0, // itemWidth / itemHeight
           children: mangas
               .map((manga) => GestureDetector(
                   onLongPress: () {
@@ -83,12 +93,12 @@ class MyHomePage extends ConsumerWidget {
                         child: Align(
                           alignment: Alignment.bottomLeft,
                           child: Text(
-                            '${manga.title} (${manga.chapterUrls.length})',
+                            '${manga.title} (${manga.lastChapterUrl().split('chapter_').last})',
                             // textAlign: TextAlign.center,
                             // overflow: TextOverflow.ellipsis,
                             style: TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 20,
+                              // fontWeight: FontWeight.bold,
+                              fontSize: 15,
                               backgroundColor: Colors.black,
                               color: Colors.white,
                             ),

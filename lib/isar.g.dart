@@ -21,7 +21,7 @@ final _isar = <String, Isar>{};
 const _utf8Encoder = Utf8Encoder();
 
 final _schema =
-    '[{"name":"Manga","idProperty":"id","properties":[{"name":"id","type":3},{"name":"title","type":5},{"name":"coverImageUrl","type":5},{"name":"url","type":5},{"name":"chapterUrls","type":11},{"name":"createdAt","type":3},{"name":"updatedAt","type":3}],"indexes":[{"unique":false,"replace":false,"properties":[{"name":"title","indexType":2,"caseSensitive":true}]}],"links":[]}]';
+    '[{"name":"Manga","idProperty":"id","properties":[{"name":"id","type":3},{"name":"title","type":5},{"name":"coverImageUrl","type":5},{"name":"url","type":5},{"name":"rate","type":4},{"name":"chapterUrls","type":11},{"name":"createdAt","type":3},{"name":"updatedAt","type":3}],"indexes":[{"unique":false,"replace":false,"properties":[{"name":"title","indexType":2,"caseSensitive":true}]}],"links":[]}]';
 
 final _mangaCollection = <String, IsarCollection<Manga>>{};
 
@@ -75,9 +75,9 @@ Future<Isar> openIsar(
   final collectionPtrPtr = malloc<Pointer>();
   {
     nCall(IC.isar_get_collection(isarPtr, collectionPtrPtr, 0));
-    final propertyOffsetsPtr = malloc<Uint32>(7);
+    final propertyOffsetsPtr = malloc<Uint32>(8);
     IC.isar_get_property_offsets(collectionPtrPtr.value, propertyOffsetsPtr);
-    final propertyOffsets = propertyOffsetsPtr.asTypedList(7).toList();
+    final propertyOffsets = propertyOffsetsPtr.asTypedList(8).toList();
     malloc.free(propertyOffsetsPtr);
     _mangaCollection[name] = IsarCollectionImpl(
       isar,
@@ -133,20 +133,22 @@ class _MangaAdapter extends TypeAdapter<Manga> {
     final value3 = object.url;
     final _url = _utf8Encoder.convert(value3);
     dynamicSize += _url.length;
-    final value4 = object.chapterUrls;
-    dynamicSize += (value4.length) * 8;
-    List<Uint8List> bytesList4 = [];
-    for (var str in value4) {
+    final value4 = object.rate;
+    final _rate = value4;
+    final value5 = object.chapterUrls;
+    dynamicSize += (value5.length) * 8;
+    List<Uint8List> bytesList5 = [];
+    for (var str in value5) {
       final bytes = _utf8Encoder.convert(str);
-      bytesList4.add(bytes);
+      bytesList5.add(bytes);
       dynamicSize += bytes.length;
     }
-    final _chapterUrls = bytesList4;
-    final value5 = object.createdAt;
-    final _createdAt = value5;
-    final value6 = object.updatedAt;
-    final _updatedAt = value6;
-    final size = dynamicSize + 58;
+    final _chapterUrls = bytesList5;
+    final value6 = object.createdAt;
+    final _createdAt = value6;
+    final value7 = object.updatedAt;
+    final _updatedAt = value7;
+    final size = dynamicSize + 66;
 
     late int bufferSize;
     if (existingBufferSize != null) {
@@ -163,14 +165,15 @@ class _MangaAdapter extends TypeAdapter<Manga> {
     }
     rawObj.buffer_length = size;
     final buffer = rawObj.buffer.asTypedList(size);
-    final writer = BinaryWriter(buffer, 58);
+    final writer = BinaryWriter(buffer, 66);
     writer.writeLong(offsets[0], _id);
     writer.writeBytes(offsets[1], _title);
     writer.writeBytes(offsets[2], _coverImageUrl);
     writer.writeBytes(offsets[3], _url);
-    writer.writeStringList(offsets[4], _chapterUrls);
-    writer.writeDateTime(offsets[5], _createdAt);
-    writer.writeDateTime(offsets[6], _updatedAt);
+    writer.writeDouble(offsets[4], _rate);
+    writer.writeStringList(offsets[5], _chapterUrls);
+    writer.writeDateTime(offsets[6], _createdAt);
+    writer.writeDateTime(offsets[7], _updatedAt);
     return bufferSize;
   }
 
@@ -182,9 +185,10 @@ class _MangaAdapter extends TypeAdapter<Manga> {
     object.title = reader.readString(offsets[1]);
     object.coverImageUrl = reader.readString(offsets[2]);
     object.url = reader.readString(offsets[3]);
-    object.chapterUrls = reader.readStringList(offsets[4]) ?? [];
-    object.createdAt = reader.readDateTime(offsets[5]);
-    object.updatedAt = reader.readDateTime(offsets[6]);
+    object.rate = reader.readDouble(offsets[4]);
+    object.chapterUrls = reader.readStringList(offsets[5]) ?? [];
+    object.createdAt = reader.readDateTime(offsets[6]);
+    object.updatedAt = reader.readDateTime(offsets[7]);
     return object;
   }
 }
@@ -616,10 +620,46 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
     ));
   }
 
+  QueryBuilder<Manga, QAfterFilterCondition> rateGreaterThan(double value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Gt,
+      4,
+      'Double',
+      lower: value,
+      includeLower: include,
+    ));
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> rateLessThan(double value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Lt,
+      4,
+      'Double',
+      upper: value,
+      includeUpper: include,
+    ));
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> rateBetween(
+      double lower, double upper,
+      {bool includeLower = true, bool includeUpper = true}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Between,
+      4,
+      'Double',
+      lower: lower,
+      includeLower: includeLower,
+      upper: upper,
+      includeUpper: includeUpper,
+    ));
+  }
+
   QueryBuilder<Manga, QAfterFilterCondition> createdAtEqualTo(DateTime value) {
     return addFilterCondition(QueryCondition(
       ConditionType.Eq,
-      5,
+      6,
       'DateTime',
       lower: value,
       upper: value,
@@ -645,7 +685,7 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
       {bool include = false}) {
     return addFilterCondition(QueryCondition(
       ConditionType.Gt,
-      5,
+      6,
       'DateTime',
       lower: value,
       includeLower: include,
@@ -656,7 +696,7 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
       {bool include = false}) {
     return addFilterCondition(QueryCondition(
       ConditionType.Lt,
-      5,
+      6,
       'DateTime',
       upper: value,
       includeUpper: include,
@@ -668,7 +708,7 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
       {bool includeLower = true, bool includeUpper = true}) {
     return addFilterCondition(QueryCondition(
       ConditionType.Between,
-      5,
+      6,
       'DateTime',
       lower: lower,
       includeLower: includeLower,
@@ -680,7 +720,7 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
   QueryBuilder<Manga, QAfterFilterCondition> updatedAtEqualTo(DateTime value) {
     return addFilterCondition(QueryCondition(
       ConditionType.Eq,
-      6,
+      7,
       'DateTime',
       lower: value,
       upper: value,
@@ -706,7 +746,7 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
       {bool include = false}) {
     return addFilterCondition(QueryCondition(
       ConditionType.Gt,
-      6,
+      7,
       'DateTime',
       lower: value,
       includeLower: include,
@@ -717,7 +757,7 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
       {bool include = false}) {
     return addFilterCondition(QueryCondition(
       ConditionType.Lt,
-      6,
+      7,
       'DateTime',
       upper: value,
       includeUpper: include,
@@ -729,7 +769,7 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
       {bool includeLower = true, bool includeUpper = true}) {
     return addFilterCondition(QueryCondition(
       ConditionType.Between,
-      6,
+      7,
       'DateTime',
       lower: lower,
       includeLower: includeLower,
@@ -762,16 +802,20 @@ extension MangaQueryWhereDistinct on QueryBuilder<Manga, QDistinct> {
     return addDistinctByInternal(3);
   }
 
-  QueryBuilder<Manga, QDistinct> distinctByChapterUrls() {
+  QueryBuilder<Manga, QDistinct> distinctByRate() {
     return addDistinctByInternal(4);
   }
 
-  QueryBuilder<Manga, QDistinct> distinctByCreatedAt() {
+  QueryBuilder<Manga, QDistinct> distinctByChapterUrls() {
     return addDistinctByInternal(5);
   }
 
-  QueryBuilder<Manga, QDistinct> distinctByUpdatedAt() {
+  QueryBuilder<Manga, QDistinct> distinctByCreatedAt() {
     return addDistinctByInternal(6);
+  }
+
+  QueryBuilder<Manga, QDistinct> distinctByUpdatedAt() {
+    return addDistinctByInternal(7);
   }
 }
 
@@ -802,6 +846,7 @@ class _GeneratedIsarInterface implements IsarInterface {
         'title': object.title,
         'coverImageUrl': object.coverImageUrl,
         'url': object.url,
+        'rate': object.rate,
         'chapterUrls': object.chapterUrls,
         'createdAt': object.createdAt,
         'updatedAt': object.updatedAt,

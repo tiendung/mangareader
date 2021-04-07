@@ -13,6 +13,8 @@ class Manga {
 
   String url = "";
 
+  double rate = 0.0;
+
   List<String> chapterUrls = [];
 
   DateTime createdAt = DateTime.now();
