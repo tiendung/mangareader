@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'mangas_provider.dart';
+import 'chapter_screen.dart';
 import 'manga_screen.dart';
 
 void main() {
@@ -39,7 +40,7 @@ class MyHomePage extends ConsumerWidget {
       appBar: AppBar(
         // Here we take the value from the MyHomePage object that was created by
         // the App.build method, and use it to set our appbar title.
-        title: Text("Mangas"),
+        title: Text("Latest"),
       ),
       body: Center(
         // Center is a layout widget. It takes a single child and positions it
@@ -51,11 +52,20 @@ class MyHomePage extends ConsumerWidget {
           crossAxisCount: 2,
           children: mangas
               .map((manga) => GestureDetector(
-                  onTap: () {
+                  onLongPress: () {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         builder: (_) => MangaScreen(manga: manga),
+                      ),
+                    );
+                  },
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) =>
+                            ChapterScreen(chapterUrl: manga.lastChapterUrl()),
                       ),
                     );
                   },
@@ -91,7 +101,7 @@ class MyHomePage extends ConsumerWidget {
       floatingActionButton: FloatingActionButton(
         onPressed: _handleRefreshPressed,
         tooltip: 'Refresh',
-        child: Icon(Icons.add),
+        child: Icon(Icons.refresh),
       ), // This trailing comma makes auto-formatting nicer for build methods.
     );
   }
