@@ -18,17 +18,25 @@ class MangaScreen extends StatelessWidget {
                 crossAxisSpacing: 10,
                 mainAxisSpacing: 10,
                 crossAxisCount: 3,
-                children: manga.chapters
-                    .map((chapter) => GestureDetector(
+                childAspectRatio: 3, // itemWidth / itemHeight
+                children: manga.chapterUrls
+                    .map((chapterUrl) => GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) => ChapterScreen(chapter: chapter),
+                              builder: (_) =>
+                                  ChapterScreen(chapterUrl: chapterUrl),
                             ),
                           );
                         },
-                        child: Text('${chapter.title}: ${chapter.url}')))
+                        child: Text(
+                          chapterUrl.split('/').last,
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 16,
+                          ),
+                        )))
                     .toList())));
   }
 }

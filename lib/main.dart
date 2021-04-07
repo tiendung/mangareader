@@ -73,7 +73,7 @@ class MyHomePage extends ConsumerWidget {
                         child: Align(
                           alignment: Alignment.bottomLeft,
                           child: Text(
-                            '${manga.title} (${manga.chapters.length})',
+                            '${manga.title} (${manga.chapterUrls.length})',
                             // textAlign: TextAlign.center,
                             // overflow: TextOverflow.ellipsis,
                             style: TextStyle(

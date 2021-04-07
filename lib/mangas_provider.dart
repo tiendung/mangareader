@@ -25,7 +25,6 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
     if (state.length >= 9) {
       final isar = await openIsar();
       await isar.writeTxn((isar) async {
-        await isar.chapters.where().deleteAll();
         await isar.mangas.where().deleteAll();
       });
       state = [];
@@ -38,23 +37,13 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
     await isar.writeTxn((isar) async {
       manga.updatedAt = DateTime.now();
       await isar.mangas.put(manga);
-      await manga.chapters.saveChanges();
     });
     state = [...state, manga];
-    // manga.chapters.forEach((c) {
-    //   c.crawl();
-    // });
-    // isar.writeTxn((isar) async {
-    //   await manga.chapters.saveChanges();
-    // });
   }
 
   Future<void> refresh() async {
     final isar = await openIsar();
     final mangas = await isar.mangas.where().findAll();
-    mangas.forEach((manga) async {
-      await manga.chapters.load();
-    });
     state = mangas;
   }
 }
