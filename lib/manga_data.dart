@@ -1,5 +1,5 @@
 import 'package:isar/isar.dart';
-import 'package:dio/dio.dart';
+import 'isar.g.dart';
 
 @Collection()
 class Manga {
@@ -15,34 +15,42 @@ class Manga {
 
   double rate = 4.5;
 
-  List<String> chapterUrls = [];
+  String lastChapterUrl = "";
+
+  String currentChapterUrl = "";
+
+  int readCount = 0;
 
   DateTime createdAt = DateTime.now();
   DateTime updatedAt = DateTime.now();
 
-  String lastChapterUrl() {
-    if (chapterUrls.length > 0) return chapterUrls.first;
-    return "";
-  }
-
   String firstChapterUrl() {
-    return lastChapterUrl().split('chapter_').first + 'chapter_1';
+    return lastChapterUrl.split('chapter_').first + 'chapter_1';
   }
 
-  Future<void> crawl() async {
-    var response = await Dio().get(url); // https://manganelo.com/manga/go922760
-    final str = response.data.toString();
-    final exp = RegExp(r'class="chapter-name.+?href="(.+?)".+?>(.+?)</a>');
-    Iterable<RegExpMatch> matches = exp.allMatches(str);
-    for (var i = 0; i < matches.length; i++) {
-      final url = matches.elementAt(i)[1]!;
-      if (chapterUrls.length > i && url == chapterUrls[i]) {
-        break;
-      } else {
-        chapterUrls.insert(i, url);
-      }
+  String fullTitle() {
+    return '$title (${lastChapterUrl.split('chapter_').last})';
+  }
+
+  void updateCurrentReading(String chapterUrl) async {
+    // print(chapterUrl);
+    currentChapterUrl = chapterUrl;
+    readCount++;
+    save();
+  }
+
+  String defaultChapterUrl() {
+    if (currentChapterUrl == "") {
+      return lastChapterUrl;
+    } else {
+      return currentChapterUrl;
     }
-    title = RegExp(r'<h1>(.+?)</h1>').firstMatch(str)![1]!;
-    coverImageUrl = RegExp(r'src="(.+?jpg)" alt="').firstMatch(str)![1]!;
+  }
+
+  void save() async {
+    final isar = await openIsar();
+    isar.writeTxn((isar) async {
+      await isar.mangas.put(this);
+    });
   }
 }

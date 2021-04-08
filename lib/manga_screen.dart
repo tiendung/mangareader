@@ -19,14 +19,14 @@ class MangaScreen extends StatelessWidget {
                 mainAxisSpacing: 10,
                 crossAxisCount: 3,
                 childAspectRatio: 3, // itemWidth / itemHeight
-                children: manga.chapterUrls
+                children: [manga.firstChapterUrl(), manga.lastChapterUrl]
                     .map((chapterUrl) => GestureDetector(
                         onTap: () {
                           Navigator.push(
                             context,
                             MaterialPageRoute(
-                              builder: (_) =>
-                                  ChapterScreen(chapterUrl: chapterUrl),
+                              builder: (_) => ChapterScreen(
+                                  manga: manga, chapterUrl: chapterUrl),
                             ),
                           );
                         },

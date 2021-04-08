@@ -2,10 +2,12 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'chapter_screen_js.dart' as ChapterScreenJs;
+import 'manga_data.dart';
 
 class ChapterScreen extends StatefulWidget {
+  final Manga manga;
   final String chapterUrl;
-  ChapterScreen({required this.chapterUrl});
+  ChapterScreen({required this.manga, required this.chapterUrl});
   @override
   ChapterScreenState createState() => ChapterScreenState();
 }
@@ -30,6 +32,11 @@ class ChapterScreenState extends State<ChapterScreen> {
               name: 'Print',
               onMessageReceived: (m) {
                 print(m.message);
+              }),
+          JavascriptChannel(
+              name: 'UpdateCurrentReading',
+              onMessageReceived: (m) {
+                widget.manga.updateCurrentReading(m.message);
               }),
           JavascriptChannel(
               name: 'HideUnwantedElems',

@@ -18,6 +18,8 @@ final hideUnwantedElemsJs = '''
     document.querySelectorAll(".navi-change-chapter-btn-prev")[1].style.display = "none";
     document.querySelectorAll(".navi-change-chapter-btn-next")[1].style = 'padding:4px; margin-bottom:15px;';
     HideUnwantedElems.postMessage("DONE");
+    var x = document.querySelector(".navi-change-chapter>option[selected]") || document.querySelector(".navi-change-chapter>option[selected='selected']");
+    UpdateCurrentReading.postMessage(document.location.href.split('chapter_')[0] + 'chapter_' + x.getAttribute("data-c"));
 ''';
 
 Future<String> nextChapJs(String url) async {

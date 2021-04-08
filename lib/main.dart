@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'mangas_provider.dart';
 import 'chapter_screen.dart';
-import 'manga_screen.dart';
+import 'manga_data.dart';
 
 void main() {
   runApp(ProviderScope(
@@ -29,7 +29,25 @@ class MyHomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, ScopedReader watch) {
     final mangas = watch(mangasProvider);
-    // context.read(mangasProvider.notifier).refresh();
+
+    var now = DateTime.now();
+    var map = <String, List<Manga>>{};
+    for (var manga in mangas) {
+      final d = now.difference(manga.updatedAt).inDays;
+      String k = "";
+      if (d <= 7) {
+        k = "Weekly";
+      } else if (d <= 14) {
+        k = "Two week";
+      } else if (d <= 30) {
+        k = "Monthly";
+      } else if (d <= 60) {
+        k = "Two month";
+      }
+      if (k != "") {
+        (map[k] ??= []).add(manga);
+      }
+    }
 
     void _handleRefreshPressed() async {
       final mangasNotifier = context.read(mangasProvider.notifier);
@@ -54,13 +72,13 @@ class MyHomePage extends ConsumerWidget {
           children: mangas
               .map((manga) => GestureDetector(
                   onLongPress: () {
+                    print(manga.firstChapterUrl());
                     Navigator.push(
                       context,
                       MaterialPageRoute(
                         // builder: (_) => MangaScreen(manga: manga),
                         builder: (_) => ChapterScreen(
-                            chapterUrl: manga.lastChapterUrl().replaceFirst(
-                                RegExp(r'chapter_\.+?^'), 'chapter_1')),
+                            manga: manga, chapterUrl: manga.firstChapterUrl()),
                       ),
                     );
                   },
@@ -68,8 +86,9 @@ class MyHomePage extends ConsumerWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) =>
-                            ChapterScreen(chapterUrl: manga.lastChapterUrl()),
+                        builder: (_) => ChapterScreen(
+                            manga: manga,
+                            chapterUrl: manga.defaultChapterUrl()),
                       ),
                     );
                   },
@@ -87,7 +106,7 @@ class MyHomePage extends ConsumerWidget {
                         child: Align(
                           alignment: Alignment.bottomLeft,
                           child: Text(
-                            '${manga.title} (${manga.lastChapterUrl().split('chapter_').last})',
+                            manga.fullTitle(),
                             // textAlign: TextAlign.center,
                             // overflow: TextOverflow.ellipsis,
                             style: TextStyle(
