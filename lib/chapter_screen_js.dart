@@ -18,8 +18,6 @@ final hideUnwantedElemsJs = '''
     document.querySelectorAll(".navi-change-chapter-btn-prev")[1].style.display = "none";
     document.querySelectorAll(".navi-change-chapter-btn-next")[1].style = 'padding:4px; margin-bottom:15px;';
     HideUnwantedElems.postMessage("DONE");
-    var x = document.querySelector(".navi-change-chapter>option[selected='']") || document.querySelector(".navi-change-chapter>option[selected='selected']");
-    UpdateCurrentReading.postMessage(document.location.href.split('chapter_')[0] + 'chapter_' + x.getAttribute("data-c"));
 ''';
 
 Future<String> nextChapJs(String url) async {
@@ -40,21 +38,23 @@ Future<String> nextChapJs(String url) async {
   document.nextChapContent = '$nextChapImgs';
   document.nextChapDiv.innerHTML = document.nextChapContent;
   document.reachBottomCount = 1;
+
   if (!document.nextChapButtonsBinded) {
     document.querySelectorAll(".navi-change-chapter-btn-next").forEach(function(n,i) {
       n.onclick = function (e) { 
         e.preventDefault();
         document.querySelector(".container-chapter-reader").innerHTML = document.nextChapContent;
-        var x = document.querySelector(".navi-change-chapter>option[selected]"); if (x) x.removeAttribute("selected");
-        var x = document.querySelector(".navi-change-chapter>option[selected='selected']"); if (x) x.removeAttribute("selected");
+        document.nextChapDiv.innerHTML = "";
         x = document.querySelector(".navi-change-chapter>option[data-c='"+document.nextChapId+"']");
         x.selected = "selected";
         window.scrollTo(0, 0);
         if (x.previousSibling) {
           GetNextChapUrl.postMessage(location.href.split("chapter_")[0]+"chapter_"+x.previousSibling.getAttribute("data-c"));
         } else { this.style.display="none"; }
+        UpdateCurrentReading.postMessage(document.location.href.split('chapter_')[0] + 'chapter_' + x.nextSibling.getAttribute("data-c"));
       };
     });
+
     document.addEventListener('scroll', function (event) {
         if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight-document.reachBottomCount) {
             Print.postMessage("REACH BOTTOM OF THE PAGE");
@@ -64,6 +64,7 @@ Future<String> nextChapJs(String url) async {
             document.reachBottomCount = 110;
         }
     });
+
     document.nextChapButtonsBinded = true;
   };
   ''';
