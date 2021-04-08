@@ -39,7 +39,7 @@ Future<String> nextChapJs(String url) async {
   document.nextChapId = "$nextChapId";
   document.nextChapContent = '$nextChapImgs';
   document.nextChapDiv.innerHTML = document.nextChapContent;
-  document.reachBottomCount = 5;
+  document.reachBottomCount = 1;
   if (!document.nextChapButtonsBinded) {
     document.querySelectorAll(".navi-change-chapter-btn-next").forEach(function(n,i) {
       n.onclick = function (e) { 
