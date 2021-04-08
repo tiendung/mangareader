@@ -1,7 +1,7 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-import 'chapter_screen_js.dart';
+import 'chapter_screen_js.dart' as ChapterScreenJs;
 
 class ChapterScreen extends StatefulWidget {
   final String chapterUrl;
@@ -35,12 +35,14 @@ class ChapterScreenState extends State<ChapterScreen> {
               name: 'HideUnwantedElems',
               onMessageReceived: (m) {
                 jsRun = true;
-                _controller!.evaluateJavascript(getNextChapUrlJs);
+                _controller!
+                    .evaluateJavascript(ChapterScreenJs.getNextChapUrlJs);
               }),
           JavascriptChannel(
               name: 'GetNextChapUrl',
               onMessageReceived: (m) async {
-                _controller!.evaluateJavascript(await nextChapJs(m.message));
+                _controller!.evaluateJavascript(
+                    await ChapterScreenJs.nextChapJs(m.message));
               }),
         ]),
         onWebViewCreated: (webViewController) {
@@ -51,7 +53,7 @@ class ChapterScreenState extends State<ChapterScreen> {
         },
         onProgress: (_) {
           if (jsRun) return;
-          _controller!.evaluateJavascript(hideUnwantedElemsJs);
+          _controller!.evaluateJavascript(ChapterScreenJs.hideUnwantedElemsJs);
         });
   }
 }

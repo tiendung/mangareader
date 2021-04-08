@@ -16,6 +16,7 @@ final hideUnwantedElemsJs = '''
     document.querySelectorAll(".navi-change-chapter")[1].style.display = "none";
     document.querySelectorAll(".navi-change-chapter-btn-prev")[0].style.display = "none";
     document.querySelectorAll(".navi-change-chapter-btn-prev")[1].style.display = "none";
+    document.querySelectorAll(".navi-change-chapter-btn-next")[1].style = 'padding:4px; margin-bottom:15px;';
     HideUnwantedElems.postMessage("DONE");
 ''';
 
@@ -36,7 +37,7 @@ Future<String> nextChapJs(String url) async {
   document.nextChapId = "$nextChapId";
   document.nextChapContent = '$nextChapImgs';
   document.nextChapDiv.innerHTML = document.nextChapContent;
-  document.reachBottomCount = 0;
+  document.reachBottomCount = 1;
   if (!document.nextChapButtonsBinded) {
     document.querySelectorAll(".navi-change-chapter-btn-next").forEach(function(n,i) {
       n.onclick = function (e) { 
@@ -53,11 +54,12 @@ Future<String> nextChapJs(String url) async {
       };
     });
     document.addEventListener('scroll', function (event) {
-        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight) {
+        if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight-document.reachBottomCount) {
             Print.postMessage("REACH BOTTOM OF THE PAGE");
-            document.reachBottomCount++;
-            if (document.reachBottomCount > 1)
+            if (document.reachBottomCount > 100) {
               document.querySelector(".navi-change-chapter-btn-next").click();
+            }
+            document.reachBottomCount = 110;
         }
     });
     document.nextChapButtonsBinded = true;
