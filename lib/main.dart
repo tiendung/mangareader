@@ -33,16 +33,10 @@ class MyHomePage extends ConsumerWidget {
 
     void _handleRefreshPressed() async {
       final mangasNotifier = context.read(mangasProvider.notifier);
-      await mangasNotifier.update(1);
-      mangasNotifier.load();
-      await mangasNotifier.update(2);
-      mangasNotifier.load();
-      await mangasNotifier.update(3);
-      mangasNotifier.load();
-      await mangasNotifier.update(4);
-      mangasNotifier.load();
-      await mangasNotifier.update(5);
-      mangasNotifier.load();
+      for (var i = 1; i <= 10; i++) {
+        await mangasNotifier.update(i);
+        mangasNotifier.load();
+      }
     }
 
     return Scaffold(

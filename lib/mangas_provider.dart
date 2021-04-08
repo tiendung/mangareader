@@ -55,6 +55,7 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
   Future<void> load() async {
     final isar = await openIsar();
     final mangas = await isar.mangas.where().findAll();
+    mangas.sort((a, b) => -a.rate.compareTo(b.rate));
     state = mangas;
   }
 
