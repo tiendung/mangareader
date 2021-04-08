@@ -11,6 +11,7 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
   MangasNotifier() : super([Manga()..title = "Loading mangas ..."]);
 
   void refresh(int maxPage) async {
+    load();
     for (var i = 1; i <= maxPage; i++) {
       await update(i);
       load();

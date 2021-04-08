@@ -25,6 +25,10 @@ class Manga {
     return "";
   }
 
+  String firstChapterUrl() {
+    return lastChapterUrl().split('chapter_').first + 'chapter_1';
+  }
+
   Future<void> crawl() async {
     var response = await Dio().get(url); // https://manganelo.com/manga/go922760
     final str = response.data.toString();
