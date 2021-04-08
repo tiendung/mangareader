@@ -1,13 +1,21 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:dio/dio.dart';
+import 'package:intl/intl.dart';
 import 'manga_data.dart';
 import 'isar.g.dart';
-import 'package:dio/dio.dart';
 
 final mangasProvider = StateNotifierProvider<MangasNotifier, List<Manga>>(
-    (ref) => MangasNotifier()..load());
+    (ref) => MangasNotifier()..refresh(20));
 
 class MangasNotifier extends StateNotifier<List<Manga>> {
   MangasNotifier() : super([Manga()..title = "Loading mangas ..."]);
+
+  void refresh(int maxPage) async {
+    for (var i = 1; i <= maxPage; i++) {
+      await update(i);
+      load();
+    }
+  }
 
   Future<void> update(int page) async {
     final isar = await openIsar();
@@ -38,6 +46,12 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
                 .firstMatch(s)![1]!;
         manga.chapterUrls.add(lastChapterUrl);
 
+        // <span class="genres-item-time">Oct 16,19</span>
+        final updatedAtStr =
+            RegExp(r'class="genres-item-time">(.+?)<').firstMatch(s)![1]!;
+        // print(updatedAtStr); // Mar 03,21
+        manga.updatedAt = DateFormat('MMM d,yy', 'en_US').parse(updatedAtStr);
+
         final myManga = state.firstWhere((x) => x.url == manga.url, orElse: () {
           return manga;
         });
@@ -60,37 +74,7 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
   Future<void> load() async {
     final isar = await openIsar();
     final mangas = await isar.mangas.where().findAll();
-    mangas.sort((a, b) => -a.rate.compareTo(b.rate));
+    mangas.sort((a, b) => -a.updatedAt.compareTo(b.updatedAt));
     state = mangas;
-  }
-
-  Future<void> add() async {
-    final mangaUrls = [
-      'https://manganelo.com/manga/gc923951',
-      'https://manganelo.com/manga/go922760',
-      'https://manganelo.com/manga/pn918005',
-      'https://manganelo.com/manga/ijhr296321559609648',
-      'https://manganelo.com/manga/zu917722',
-      'https://manganelo.com/manga/lg924896',
-      'https://manganelo.com/manga/pe922986',
-      'https://manganelo.com/manga/vf922819',
-    ];
-    if (state.length > mangaUrls.length) {
-      final isar = await openIsar();
-      await isar.writeTxn((isar) async {
-        await isar.mangas.where().deleteAll();
-      });
-      state = [];
-      return;
-    }
-    final manga = Manga();
-    manga.url = mangaUrls[state.length % mangaUrls.length];
-    await manga.crawl();
-    final isar = await openIsar();
-    await isar.writeTxn((isar) async {
-      manga.updatedAt = DateTime.now();
-      await isar.mangas.put(manga);
-    });
-    state = [...state, manga];
   }
 }
