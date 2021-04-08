@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:sticky_headers/sticky_headers.dart';
 import 'mangas_provider.dart';
 import 'manga_data.dart';
-import 'mangas_widget.dart';
+import 'mangas_gridview.dart';
 
 void main() {
   runApp(ProviderScope(
@@ -34,23 +35,25 @@ class MyHomePage extends ConsumerWidget {
     for (var manga in mangas) {
       final d = now.difference(manga.updatedAt).inDays;
       String k = "";
-      if (d <= 7) {
-        k = "Weekly";
+      if (d <= 1) {
+        k = "Today";
+      } else if (d <= 3) {
+        k = "3 days";
+      } else if (d <= 7) {
+        k = "1 week";
       } else if (d <= 14) {
-        k = "Two week";
+        k = "2 weeks";
       } else if (d <= 30) {
-        k = "Monthly";
-      } else if (d <= 60) {
-        k = "Two month";
+        k = "1 month";
       }
-      if (k != "") {
+      if (k != "" && manga.rate >= 4.5) {
         (map[k] ??= []).add(manga);
       }
     }
 
     void _handleRefreshPressed() async {
       final mangasNotifier = context.read(mangasProvider.notifier);
-      mangasNotifier.refresh(10);
+      mangasNotifier.update();
     }
 
     return Scaffold(
@@ -60,10 +63,30 @@ class MyHomePage extends ConsumerWidget {
         title: Text("Latest"),
       ),
       body: Center(
-        // Center is a layout widget. It takes a single child and positions it
-        // in the middle of the parent.
-        child: MangasWidget(mangas: mangas),
-      ),
+          // Center is a layout widget. It takes a single child and positions it
+          // in the middle of the parent.
+          child: ListView.builder(
+        itemCount: map.length,
+        itemBuilder: (context, index) {
+          return StickyHeader(
+            header: Container(
+              height: 50.0,
+              color: Colors.blueGrey[700],
+              padding: EdgeInsets.symmetric(horizontal: 16.0),
+              alignment: Alignment.centerLeft,
+              child: Text(
+                map.keys.elementAt(index),
+                style: const TextStyle(color: Colors.white),
+              ),
+            ),
+            // content: Text(map.values.elementAt(index)[0].title),
+            content: Container(
+              height: 600,
+              child: MangasGridView(mangas: map.values.elementAt(index)),
+            ),
+          );
+        },
+      )),
       floatingActionButton: FloatingActionButton(
         onPressed: _handleRefreshPressed,
         tooltip: 'Refresh',

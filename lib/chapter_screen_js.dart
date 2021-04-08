@@ -18,7 +18,7 @@ final hideUnwantedElemsJs = '''
     document.querySelectorAll(".navi-change-chapter-btn-prev")[1].style.display = "none";
     document.querySelectorAll(".navi-change-chapter-btn-next")[1].style = 'padding:4px; margin-bottom:15px;';
     HideUnwantedElems.postMessage("DONE");
-    var x = document.querySelector(".navi-change-chapter>option[selected]") || document.querySelector(".navi-change-chapter>option[selected='selected']");
+    var x = document.querySelector(".navi-change-chapter>option[selected='']") || document.querySelector(".navi-change-chapter>option[selected='selected']");
     UpdateCurrentReading.postMessage(document.location.href.split('chapter_')[0] + 'chapter_' + x.getAttribute("data-c"));
 ''';
 
@@ -30,7 +30,7 @@ Future<String> nextChapJs(String url) async {
   Iterable<RegExpMatch> matches = exp.allMatches(str);
   final imageUrls = matches.map((e) => e[1]!);
   final String nextChapImgs =
-      imageUrls.map((e) => '<img src="$e" style="margin-top: 0px;">').join();
+      imageUrls.map((e) => '<img src="$e" style="margin:0px;">').join();
   final nextChapId = url.split('chapter_').last;
 
   return '''
@@ -39,7 +39,7 @@ Future<String> nextChapJs(String url) async {
   document.nextChapId = "$nextChapId";
   document.nextChapContent = '$nextChapImgs';
   document.nextChapDiv.innerHTML = document.nextChapContent;
-  document.reachBottomCount = 1;
+  document.reachBottomCount = 5;
   if (!document.nextChapButtonsBinded) {
     document.querySelectorAll(".navi-change-chapter-btn-next").forEach(function(n,i) {
       n.onclick = function (e) { 

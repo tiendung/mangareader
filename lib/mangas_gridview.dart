@@ -3,18 +3,20 @@ import 'package:cached_network_image/cached_network_image.dart';
 import 'chapter_screen.dart';
 import 'manga_data.dart';
 
-class MangasWidget extends StatelessWidget {
+class MangasGridView extends StatelessWidget {
   final List<Manga> mangas;
-  MangasWidget({required this.mangas});
+  MangasGridView({required this.mangas});
 
   @override
   Widget build(BuildContext context) {
+    mangas.sort((a, b) => -a.compareValue().compareTo(b.compareValue()));
     return GridView.count(
       padding: EdgeInsets.all(10.0),
-      crossAxisSpacing: 10,
-      mainAxisSpacing: 10,
+      crossAxisSpacing: 5,
+      mainAxisSpacing: 5,
       crossAxisCount: 3,
-      childAspectRatio: 225.0 / 334.0, // itemWidth / itemHeight
+      scrollDirection: Axis.horizontal,
+      childAspectRatio: 334.0 / 225.0, // itemWidth / itemHeight
       children: mangas
           .map((manga) => GestureDetector(
               onLongPress: () {
@@ -38,6 +40,8 @@ class MangasWidget extends StatelessWidget {
                 );
               },
               child: Container(
+                  // width: 225,
+                  // height: 334,
                   padding: EdgeInsets.all(5.0),
                   decoration: BoxDecoration(
                     image: DecorationImage(

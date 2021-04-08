@@ -36,6 +36,7 @@ class ChapterScreenState extends State<ChapterScreen> {
           JavascriptChannel(
               name: 'UpdateCurrentReading',
               onMessageReceived: (m) {
+                print('\n----\n${m.message}');
                 widget.manga.updateCurrentReading(m.message);
               }),
           JavascriptChannel(

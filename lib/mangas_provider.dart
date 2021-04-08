@@ -5,25 +5,25 @@ import 'manga_data.dart';
 import 'isar.g.dart';
 
 final mangasProvider = StateNotifierProvider<MangasNotifier, List<Manga>>(
-    (ref) => MangasNotifier()..refresh(20));
+    (ref) => MangasNotifier()..update());
 
 class MangasNotifier extends StateNotifier<List<Manga>> {
-  MangasNotifier() : super([Manga()..title = "Loading mangas ..."]);
+  MangasNotifier() : super([]);
 
-  void refresh(int maxPage) async {
+  void update() async {
     load();
-    for (var i = 1; i <= maxPage; i++) {
-      await update(i);
+    for (var i = 1; i <= 60; i++) {
+      crawl('https://manganelo.com/genre-all/$i');
       load();
     }
   }
 
-  Future<void> update(int page) async {
+  Future<void> crawl(String url) async {
     final isar = await openIsar();
-    var response = await Dio().get(
-        'https://manganelo.com/advanced_search?s=all&orby=topview&page=$page');
+    var response = await Dio().get(url);
     final str = response.data.toString();
     final splits = str.split('<div class="content-genres-item"');
+    final now = DateTime.now();
 
     splits.forEach((s) async {
       var match =
@@ -35,21 +35,39 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
           ..url = match[1]!
           ..title = match[2]!
           ..coverImageUrl = RegExp(r'<img class="img-loading" src="(.+?jpg)"')
-              .firstMatch(s)![1]!
-          ..lastChapterUrl =
-              RegExp(r'class="genres-item-chap .+?" href="(.+?)"')
-                  .firstMatch(s)![1]!;
+              .firstMatch(s)![1]!;
 
-        final rStr = RegExp(r'<em class="genres-item-rate">(.+?)</em>')
-            .firstMatch(s)![1]!;
-        final r = double.parse(rStr);
-        if (r > 0 && r <= 5.0) {
-          manga.rate = r;
+        final lastChapMatch =
+            RegExp(r'class="genres-item-chap .+?" href="(.+?)"').firstMatch(s);
+        if (lastChapMatch == null) {
+          return;
+        }
+        manga.lastChapterUrl = lastChapMatch[1]!;
+
+        final rMatch =
+            RegExp(r'<em class="genres-item-rate">(.+?)</em>').firstMatch(s);
+        if (rMatch != null && rMatch[1] != null) {
+          final r = double.parse(rMatch[1]!);
+          if (r > 0 && r <= 5.0) {
+            manga.rate = r;
+          }
+        }
+
+        final viewsMatch =
+            RegExp(r'class="genres-item-view">(.+?)<').firstMatch(s);
+        if (viewsMatch != null && viewsMatch[1] != null) {
+          manga.viewsCount = int.parse(viewsMatch[1]!.replaceAll(",", ""));
         }
 
         final updatedAtStr =
             RegExp(r'class="genres-item-time">(.+?)<').firstMatch(s)![1]!;
         manga.updatedAt = DateFormat('MMM d,yy', 'en_US').parse(updatedAtStr);
+        // print('''\n------------------------------------------$manga''');
+        if (manga.rate < 4.5 ||
+            manga.viewsCount < 300000 ||
+            now.difference(manga.updatedAt).inDays > 30) {
+          return;
+        }
 
         final myManga = state.firstWhere((x) => x.url == manga.url, orElse: () {
           return manga;

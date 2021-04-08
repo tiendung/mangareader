@@ -15,6 +15,8 @@ class Manga {
 
   double rate = 4.5;
 
+  int viewsCount = 0;
+
   String lastChapterUrl = "";
 
   String currentChapterUrl = "";
@@ -29,11 +31,14 @@ class Manga {
   }
 
   String fullTitle() {
-    return '$title (${lastChapterUrl.split('chapter_').last})';
+    return '$title (${lastChapterUrl.split('chapter_').last})'; //\n\n$rate* ${(viewsCount / 100000).round() / 10.0}m';
+  }
+
+  double compareValue() {
+    return readCount + (viewsCount / 999999999999.9);
   }
 
   void updateCurrentReading(String chapterUrl) async {
-    // print(chapterUrl);
     currentChapterUrl = chapterUrl;
     readCount++;
     save();
