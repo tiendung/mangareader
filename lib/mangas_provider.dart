@@ -11,8 +11,8 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
 
   Future<void> update(int page) async {
     final isar = await openIsar();
-    var response =
-        await Dio().get('https://manganelo.com/genre-all/$page?type=topview');
+    var response = await Dio().get(
+        'https://manganelo.com/advanced_search?s=all&orby=topview&page=$page');
     final str = response.data.toString();
     final splits = str.split('<div class="content-genres-item"');
     splits.forEach((s) async {
@@ -22,12 +22,17 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
       if (match != null) {
         final manga = Manga()
           ..url = match[1]!
-          ..title = match[2]!;
-        manga.coverImageUrl = RegExp(r'<img class="img-loading" src="(.+?jpg)"')
+          ..title = match[2]!
+          ..coverImageUrl = RegExp(r'<img class="img-loading" src="(.+?jpg)"')
+              .firstMatch(s)![1]!;
+
+        final rStr = RegExp(r'<em class="genres-item-rate">(.+?)</em>')
             .firstMatch(s)![1]!;
-        final r = RegExp(r'<em class="genres-item-rate">(.+?)</em>')
-            .firstMatch(s)![1]!;
-        manga.rate = double.parse(r);
+        final r = double.parse(rStr);
+        if (r > 0 && r <= 5.0) {
+          manga.rate = r;
+        }
+
         final lastChapterUrl =
             RegExp(r'class="genres-item-chap .+?" href="(.+?)"')
                 .firstMatch(s)![1]!;

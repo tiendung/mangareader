@@ -33,7 +33,7 @@ class MyHomePage extends ConsumerWidget {
 
     void _handleRefreshPressed() async {
       final mangasNotifier = context.read(mangasProvider.notifier);
-      for (var i = 1; i <= 10; i++) {
+      for (var i = 1; i <= 20; i++) {
         await mangasNotifier.update(i);
         mangasNotifier.load();
       }
@@ -60,7 +60,10 @@ class MyHomePage extends ConsumerWidget {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (_) => MangaScreen(manga: manga),
+                        // builder: (_) => MangaScreen(manga: manga),
+                        builder: (_) => ChapterScreen(
+                            chapterUrl: manga.lastChapterUrl().replaceFirst(
+                                RegExp(r'chapter_\.+?^'), 'chapter_1')),
                       ),
                     );
                   },

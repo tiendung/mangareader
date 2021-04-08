@@ -13,7 +13,7 @@ class Manga {
 
   String url = "";
 
-  double rate = 0.0;
+  double rate = 4.5;
 
   List<String> chapterUrls = [];
 
