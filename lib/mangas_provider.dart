@@ -20,73 +20,61 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
 
   Future<void> crawl(String url) async {
     final isar = await openIsar();
-    var response = await Dio().get(url);
-    final str = response.data.toString();
-    final splits = str.split('<div class="content-genres-item"');
     final now = DateTime.now();
 
+    final res = await Dio().get(url);
+    final splits = res.data.toString().split('class="content-genres-item"');
+    final List<Manga> mangas = [];
+
     splits.forEach((s) async {
-      var match =
+      var urlAndTitleMatch =
           RegExp(r'class="genres-item-name .+?" href="(.+?)" title="(.+?)"')
               .firstMatch(s);
+      if (urlAndTitleMatch == null) return;
 
-      if (match != null) {
-        final manga = Manga()
-          ..url = match[1]!
-          ..title = match[2]!
-          ..coverImageUrl = RegExp(r'<img class="img-loading" src="(.+?jpg)"')
-              .firstMatch(s)![1]!;
+      final lastChapMatch =
+          RegExp(r'class="genres-item-chap .+?" href="(.+?)"').firstMatch(s);
+      if (lastChapMatch == null) return;
 
-        final lastChapMatch =
-            RegExp(r'class="genres-item-chap .+?" href="(.+?)"').firstMatch(s);
-        if (lastChapMatch == null) {
-          return;
-        }
-        manga.lastChapterUrl = lastChapMatch[1]!;
+      final coverImageMatch =
+          RegExp(r'<img class="img-loading" src="(.+?jpg)"').firstMatch(s);
 
-        final rMatch =
-            RegExp(r'<em class="genres-item-rate">(.+?)</em>').firstMatch(s);
-        if (rMatch != null && rMatch[1] != null) {
-          final r = double.parse(rMatch[1]!);
-          if (r > 0 && r <= 5.0) {
-            manga.rate = r;
-          }
-        }
+      final url = urlAndTitleMatch[1]!;
+      var isNewManga = false;
+      final manga = state.firstWhere((x) => x.url == url, orElse: () {
+        isNewManga = true;
+        return Manga();
+      });
 
-        final viewsMatch =
-            RegExp(r'class="genres-item-view">(.+?)<').firstMatch(s);
-        if (viewsMatch != null && viewsMatch[1] != null) {
-          manga.viewsCount = int.parse(viewsMatch[1]!.replaceAll(",", ""));
-        }
+      // print('\n- - - - - - - - - - - - - - -\n$s, $url, $isNewManga\n\n');
 
-        final updatedAtStr =
-            RegExp(r'class="genres-item-time">(.+?)<').firstMatch(s)![1]!;
-        manga.updatedAt = DateFormat('MMM d,yy', 'en_US').parse(updatedAtStr);
-        // print('''\n------------------------------------------$manga''');
-        if (manga.rate < 4.5 ||
-            manga.viewsCount < 300000 ||
-            now.difference(manga.updatedAt).inDays > 30) {
-          return;
-        }
+      final viewsMatch =
+          RegExp(r'class="genres-item-view">(.+?)<').firstMatch(s);
+      final viewsCount = int.parse(viewsMatch![1]!.replaceAll(",", ""));
+      if (isNewManga && viewsCount < 300000) return;
 
-        final myManga = state.firstWhere((x) => x.url == manga.url, orElse: () {
-          return manga;
-        });
+      final rateMatch =
+          RegExp(r'<em class="genres-item-rate">(.+?)</em>').firstMatch(s);
+      final rate = rateMatch != null ? double.parse(rateMatch[1]!) : 4.5;
+      if (isNewManga && rate < 4.5) return;
 
-        if (myManga != manga) {
-          if (myManga.lastChapterUrl != manga.lastChapterUrl) {
-            isar.writeTxn((isar) async {
-              myManga.lastChapterUrl = manga.lastChapterUrl;
-              myManga.updatedAt = manga.updatedAt;
-              await isar.mangas.put(myManga);
-            });
-          }
-        } else {
-          isar.writeTxn((isar) async {
-            await isar.mangas.put(manga);
-          });
-        }
-      }
+      final updatedAtStr =
+          RegExp(r'class="genres-item-time">(.+?)<').firstMatch(s)![1]!;
+      final updatedAt = DateFormat('MMM d,yy', 'en_US').parse(updatedAtStr);
+      if (isNewManga && now.difference(updatedAt).inDays > 30) return;
+
+      manga
+        ..url = url
+        ..title = urlAndTitleMatch[2]!
+        ..lastChapterUrl = lastChapMatch[1]!
+        ..coverImageUrl = coverImageMatch![1]!
+        ..viewsCount = viewsCount
+        ..rate = rate <= 5.0 ? rate : 4.5;
+      mangas.add(manga);
+    });
+
+    isar.writeTxn((isar) async {
+      await isar.mangas.putAll(mangas);
     });
   }
 
