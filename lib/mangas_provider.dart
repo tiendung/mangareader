@@ -15,6 +15,9 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
     for (var i = 1; i <= 60; i++) {
       await crawl('https://manganelo.com/genre-all/$i');
       await load();
+
+      await crawl('https://manganelo.com/genre-all/$i?type=topview');
+      await load();
     }
   }
 
@@ -82,6 +85,7 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
     final isar = await openIsar();
     final mangas = await isar.mangas.where().findAll();
     mangas.sort((a, b) => -a.updatedAt.compareTo(b.updatedAt));
+    // print('\n- - - - - - - - - - - - -\n${mangas.length}\n\n');
     state = mangas;
   }
 }
