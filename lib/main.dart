@@ -18,7 +18,7 @@ class MyApp extends StatelessWidget {
     return MaterialApp(
       title: 'Flutter Demo',
       theme: ThemeData(
-        primarySwatch: Colors.blue,
+        primarySwatch: Colors.blueGrey,
       ),
       home: MyHomePage(),
     );
@@ -38,13 +38,13 @@ class MyHomePage extends ConsumerWidget {
       if (d <= 1) {
         k = "Today";
       } else if (d <= 3) {
-        k = "3 days";
+        k = "Two Days Ago";
       } else if (d <= 7) {
-        k = "1 week";
+        k = "Last Week";
       } else if (d <= 14) {
-        k = "2 weeks";
+        k = "Last Two Weeks";
       } else if (d <= 30) {
-        k = "1 month";
+        k = "Last Month";
       }
       if (k != "" && manga.rate >= 4.5) {
         (map[k] ??= []).add(manga);
@@ -76,7 +76,10 @@ class MyHomePage extends ConsumerWidget {
               alignment: Alignment.centerLeft,
               child: Text(
                 map.keys.elementAt(index),
-                style: const TextStyle(color: Colors.white),
+                style: const TextStyle(
+                  fontWeight: FontWeight.bold,
+                  color: Colors.white,
+                ),
               ),
             ),
             // content: Text(map.values.elementAt(index)[0].title),

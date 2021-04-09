@@ -43,8 +43,8 @@ class Manga {
   }
 
   String fullTitle() {
-    return '$title (${currentChap()}/${lastChap()})';
-    //\n\n$rate* ${(viewsCount / 100000).round() / 10.0}m';
+    final t = (title.length < 36) ? title : title.substring(0, 33) + '...';
+    return '$t (${currentChap()}/${lastChap()})';
   }
 
   double compareValue() {

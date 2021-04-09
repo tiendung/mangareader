@@ -11,7 +11,7 @@ class MangasGridView extends StatelessWidget {
   Widget build(BuildContext context) {
     mangas.sort((a, b) => -a.compareValue().compareTo(b.compareValue()));
     return GridView.count(
-      padding: EdgeInsets.all(10.0),
+      padding: EdgeInsets.only(bottom: 5, top: 1),
       crossAxisSpacing: 5,
       mainAxisSpacing: 5,
       crossAxisCount: 3,
@@ -56,7 +56,7 @@ class MangasGridView extends StatelessWidget {
                       child: Text(
                         manga.fullTitle(),
                         // textAlign: TextAlign.center,
-                        // overflow: TextOverflow.ellipsis,
+                        overflow: TextOverflow.ellipsis,
                         style: TextStyle(
                           // fontWeight: FontWeight.bold,
                           fontSize: 15,
