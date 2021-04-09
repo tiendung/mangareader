@@ -43,7 +43,7 @@ class Manga {
   }
 
   String fullTitle() {
-    final t = (title.length < 36) ? title : title.substring(0, 33) + '...';
+    final t = (title.length <= 40) ? title : title.substring(0, 33) + '...';
     return '$t (${currentChap()}/${lastChap()})';
   }
 
