@@ -11,10 +11,10 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
   MangasNotifier() : super([]);
 
   void update() async {
-    load();
+    await load();
     for (var i = 1; i <= 60; i++) {
-      crawl('https://manganelo.com/genre-all/$i');
-      load();
+      await crawl('https://manganelo.com/genre-all/$i');
+      await load();
     }
   }
 
@@ -46,12 +46,12 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
         return Manga();
       });
 
-      // print('\n- - - - - - - - - - - - - - -\n$s, $url, $isNewManga\n\n');
-
       final viewsMatch =
           RegExp(r'class="genres-item-view">(.+?)<').firstMatch(s);
       final viewsCount = int.parse(viewsMatch![1]!.replaceAll(",", ""));
       if (isNewManga && viewsCount < 300000) return;
+
+      // print('\n- - - - - - - - - - - - -\n$url, $isNewManga, ${manga.rate}, ${manga.updatedAt}, ${manga.viewsCount}\n\n');
 
       final rateMatch =
           RegExp(r'<em class="genres-item-rate">(.+?)</em>').firstMatch(s);
