@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'chapter_screen.dart';
-import 'manga_data.dart';
+import 'manga_isar.dart';
 
 class MangasGridView extends StatelessWidget {
   final List<Manga> mangas;

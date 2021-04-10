@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sticky_headers/sticky_headers.dart';
 import 'mangas_provider.dart';
-import 'manga_data.dart';
+import 'manga_isar.dart';
 import 'mangas_gridview.dart';
 import 'helpers.dart';
 

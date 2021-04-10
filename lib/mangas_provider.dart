@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
-import 'manga_data.dart';
+import 'manga_isar.dart';
 import 'helpers.dart';
 import 'isar.g.dart';
 
@@ -77,17 +77,13 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
       // print('\n- - - - - - - - - -\n$url, $isNewManga, ${manga.toStr()}\n\n');
     });
 
-    isar.writeTxn((isar) async {
-      await isar.mangas.putAll(mangas);
-      state.addAll(mangas);
-      state.sort((a, b) => -a.updatedAt.compareTo(b.updatedAt));
-    });
+    Manga.saveAll(mangas);
+    state.addAll(mangas);
+    state.sort((a, b) => -a.updatedAt.compareTo(b.updatedAt));
   }
 
-  Future<void> load() async {
-    final isar = await openIsar();
-    // await isar.writeTxn((isar) async => await isar.mangas.where().deleteAll());
-    final mangas = await isar.mangas.where().findAll();
+  load() async {
+    final mangas = await Manga.loadAll();
     mangas.sort((a, b) => -a.updatedAt.compareTo(b.updatedAt));
     state = mangas;
   }

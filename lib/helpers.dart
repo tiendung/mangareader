@@ -1,5 +1,5 @@
 import 'dart:io' show Platform;
-import 'manga_data.dart';
+import 'manga_isar.dart';
 
 const MIN_RATE = 4.6;
 const MIN_VIEWS = 300000;

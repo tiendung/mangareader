@@ -67,4 +67,18 @@ class Manga {
       await isar.mangas.put(this);
     });
   }
+
+  static Future<List<Manga>> loadAll() async {
+    final isar = await openIsar();
+    // await isar.writeTxn((isar) async => await isar.mangas.where().deleteAll());
+    final mangas = await isar.mangas.where().findAll();
+    return mangas;
+  }
+
+  static saveAll(List<Manga> mangas) async {
+    final isar = await openIsar();
+    isar.writeTxn((isar) async {
+      await isar.mangas.putAll(mangas);
+    });
+  }
 }
