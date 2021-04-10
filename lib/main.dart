@@ -1,10 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sticky_headers/sticky_headers.dart';
-import 'mangas_provider.dart';
 import 'manga_isar.dart';
+import 'package:mangareader/manga_extension.dart';
+import 'mangas_provider.dart';
 import 'mangas_gridview.dart';
-import 'helpers.dart';
 
 void main() {
   runApp(ProviderScope(
@@ -31,7 +31,7 @@ class MyHomePage extends ConsumerWidget {
   Widget build(BuildContext context, ScopedReader watch) {
     final mangas = watch(mangasProvider);
     final map = Map<String, List<Manga>>();
-    groupMangasByUpdatedAt(mangas, map);
+    MangaHelpers.groupMangasByUpdatedAt(mangas, map);
 
     void _handleRefreshPressed() async {
       final mangasNotifier = context.read(mangasProvider.notifier);
@@ -65,11 +65,13 @@ class MyHomePage extends ConsumerWidget {
           );
         },
       )),
+      floatingActionButtonLocation: FloatingActionButtonLocation.miniStartFloat,
       floatingActionButton: FloatingActionButton(
         onPressed: _handleRefreshPressed,
         tooltip: 'Refresh',
         child: Icon(Icons.refresh),
-      ), // This trailing comma makes auto-formatting nicer for build methods.
+        backgroundColor: Colors.blueGrey.withOpacity(0.8),
+      ),
     );
   }
 }

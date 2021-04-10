@@ -26,7 +26,8 @@ class ChapterScreenState extends State<ChapterScreen> {
     var jsRun = false;
     print('\n- - - - - - - - - - - - -\nREADING: ${widget.manga.toStr()}\n\n');
 
-    return WebView(
+    return Scaffold(
+      body: WebView(
         initialUrl: widget.chapterUrl,
         javascriptMode: JavascriptMode.unrestricted,
         javascriptChannels: Set.from([
@@ -64,6 +65,17 @@ class ChapterScreenState extends State<ChapterScreen> {
         onProgress: (_) {
           if (jsRun) return;
           _controller!.evaluateJavascript(ChapterScreenJs.hideUnwantedElemsJs);
-        });
+        },
+      ),
+      floatingActionButtonLocation: FloatingActionButtonLocation.miniStartFloat,
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          Navigator.pop(context);
+        },
+        tooltip: 'Back',
+        child: Icon(Icons.arrow_back_ios),
+        backgroundColor: Colors.blueGrey.withOpacity(0.3),
+      ),
+    );
   }
 }
