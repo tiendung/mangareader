@@ -5,6 +5,7 @@ import 'manga_isar.dart';
 import 'package:mangareader/manga_extension.dart';
 import 'mangas_provider.dart';
 import 'mangas_gridview.dart';
+import 'constants.dart';
 
 void main() {
   runApp(ProviderScope(
@@ -18,7 +19,12 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp(
       title: 'Flutter Demo',
+      debugShowCheckedModeBanner: false,
       theme: ThemeData(
+        brightness: Brightness.light,
+        appBarTheme: AppBarTheme(brightness: Brightness.light),
+        scaffoldBackgroundColor: Constants.backgroundColor,
+        backgroundColor: Constants.backgroundColor,
         primarySwatch: Colors.blueGrey,
       ),
       home: MyHomePage(),
@@ -53,7 +59,8 @@ class MyHomePage extends ConsumerWidget {
               child: Text(
                 map.keys.elementAt(index),
                 style: const TextStyle(
-                  fontWeight: FontWeight.bold,
+                  // fontWeight: FontWeight.bold,
+                  fontSize: 18,
                   color: Colors.white,
                 ),
               ),

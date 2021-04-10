@@ -12,9 +12,9 @@ class MangasGridView extends StatelessWidget {
   Widget build(BuildContext context) {
     mangas.sort((a, b) => -a.compareValue().compareTo(b.compareValue()));
     return GridView.count(
-      padding: EdgeInsets.only(bottom: 8, top: 3),
-      crossAxisSpacing: 5,
-      mainAxisSpacing: 5,
+      padding: EdgeInsets.only(bottom: 8, top: 2, right: 5),
+      crossAxisSpacing: 8,
+      mainAxisSpacing: 8,
       crossAxisCount: 4,
       scrollDirection: Axis.horizontal,
       childAspectRatio: 334.0 / 225.0, // itemWidth / itemHeight
@@ -41,7 +41,7 @@ class MangasGridView extends StatelessWidget {
                 );
               },
               child: Container(
-                  padding: EdgeInsets.all(5.0),
+                  padding: EdgeInsets.all(3),
                   decoration: BoxDecoration(
                       image: DecorationImage(
                         image: CachedNetworkImageProvider(manga.coverImageUrl),
@@ -50,17 +50,17 @@ class MangasGridView extends StatelessWidget {
                       boxShadow: [
                         BoxShadow(
                             color: Constants.softHighlightColor,
-                            offset: Offset(-10, -10),
+                            offset: Offset(-4, -4),
                             spreadRadius: 0,
-                            blurRadius: 10),
+                            blurRadius: 4),
                         BoxShadow(
                             color: Constants.softShadowColor,
-                            offset: Offset(10, 10),
+                            offset: Offset(4, 4),
                             spreadRadius: 0,
-                            blurRadius: 10),
+                            blurRadius: 4),
                       ]),
                   child: Opacity(
-                    opacity: 0.8,
+                    opacity: 0.9,
                     child: Align(
                       alignment: Alignment.bottomLeft,
                       child: Text(
@@ -71,7 +71,7 @@ class MangasGridView extends StatelessWidget {
                         style: TextStyle(
                           // fontWeight: FontWeight.bold,
                           fontSize: 15,
-                          backgroundColor: Colors.black,
+                          backgroundColor: Constants.backgroundColor,
                           color: Colors.white,
                         ),
                       ),
