@@ -31,7 +31,7 @@ extension MangaHelpers on Manga {
     final now = DateTime.now();
     for (var manga in mangas) {
       final k = dayDiffToStr(now.difference(manga.updatedAt).inDays);
-      if (k != "" && manga.rate >= MIN_RATE) {
+      if (k != "" && manga.rate >= MangaConstants.MIN_RATE) {
         (map[k] ??= []).add(manga);
         // if (manga.url == "https://manganelo.com/manga/the_wrong_way_to_use_healing_magic") print("\n- - - - \nFOUND: $k, ${manga.toStr()}");
       }
