@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'chapter_screen.dart';
 import 'manga_isar.dart';
+import 'constants.dart';
 
 class MangasGridView extends StatelessWidget {
   final List<Manga> mangas;
@@ -42,11 +43,22 @@ class MangasGridView extends StatelessWidget {
               child: Container(
                   padding: EdgeInsets.all(5.0),
                   decoration: BoxDecoration(
-                    image: DecorationImage(
-                      image: CachedNetworkImageProvider(manga.coverImageUrl),
-                      fit: BoxFit.cover,
-                    ),
-                  ),
+                      image: DecorationImage(
+                        image: CachedNetworkImageProvider(manga.coverImageUrl),
+                        fit: BoxFit.cover,
+                      ),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Constants.softHighlightColor,
+                            offset: Offset(-10, -10),
+                            spreadRadius: 0,
+                            blurRadius: 10),
+                        BoxShadow(
+                            color: Constants.softShadowColor,
+                            offset: Offset(10, 10),
+                            spreadRadius: 0,
+                            blurRadius: 10),
+                      ]),
                   child: Opacity(
                     opacity: 0.8,
                     child: Align(
