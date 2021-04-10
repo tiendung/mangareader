@@ -12,7 +12,7 @@ class MangasGridView extends StatelessWidget {
   Widget build(BuildContext context) {
     mangas.sort((a, b) => -a.compareValue().compareTo(b.compareValue()));
     return GridView.count(
-      padding: EdgeInsets.only(bottom: 8, top: 2, right: 5),
+      padding: EdgeInsets.only(bottom: 10, top: 5, right: 5),
       crossAxisSpacing: 8,
       mainAxisSpacing: 8,
       crossAxisCount: 4,
@@ -21,11 +21,9 @@ class MangasGridView extends StatelessWidget {
       children: mangas
           .map((manga) => GestureDetector(
               onLongPress: () {
-                print(manga.firstChapterUrl());
                 Navigator.push(
                   context,
                   MaterialPageRoute(
-                    // builder: (_) => MangaScreen(manga: manga),
                     builder: (_) => ChapterScreen(
                         manga: manga, chapterUrl: manga.firstChapterUrl()),
                   ),
@@ -47,6 +45,7 @@ class MangasGridView extends StatelessWidget {
                         image: CachedNetworkImageProvider(manga.coverImageUrl),
                         fit: BoxFit.cover,
                       ),
+                      borderRadius: BorderRadius.all(Radius.circular(4)),
                       boxShadow: [
                         BoxShadow(
                             color: Constants.softHighlightColor,
