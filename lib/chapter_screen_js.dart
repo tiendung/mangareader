@@ -7,16 +7,14 @@ final getNextChapUrlJs = '''
 
 final hideUnwantedElemsJs = '''
     document.querySelectorAll("div.container")[2].style.display = "none";
-    var m = document.querySelectorAll("div.container>div");
-    m.forEach(function(e,i) { if (i==2||i==4) e.style.paddingTop = "2em"; else e.style.display = "none"; });
+    document.querySelectorAll("div.container>div").forEach(function(e,i) { if (i==2||i==4) e.style.paddingTop = "2em"; else e.style.display = "none"; });
     document.querySelector(".body-site>div:nth-of-type(2)").style.display = "none";
     document.querySelector(".body-site>div:nth-of-type(4)").style.display = "none";
-    m = document.querySelectorAll("div.container-chapter-reader>div");
-    m.forEach(function(e,i) { e.style.display = "none"; });
+    document.querySelectorAll("div.container-chapter-reader>div").forEach(function(e,i) { e.style.display = "none"; });
+    Print.postMessage('HA HA');
     document.querySelectorAll(".navi-change-chapter")[1].style.display = "none";
-    document.querySelectorAll(".navi-change-chapter-btn-prev")[0].style.display = "none";
-    document.querySelectorAll(".navi-change-chapter-btn-prev")[1].style.display = "none";
-    document.querySelectorAll(".navi-change-chapter-btn-next")[1].style = 'padding:4px; margin-bottom:15px;';
+    document.querySelectorAll(".navi-change-chapter-btn-prev").forEach(function(e,i) { e.style.display = "none"; });
+    document.querySelectorAll(".navi-change-chapter-btn-next").forEach(function(e,i) { e.style.display = "none"; });
     HideUnwantedElems.postMessage("DONE");
 ''';
 
@@ -40,6 +38,7 @@ Future<String> nextChapJs(String url) async {
   document.reachBottomCount = 1;
 
   if (!document.nextChapButtonsBinded) {
+
     document.querySelectorAll(".navi-change-chapter-btn-next").forEach(function(n,i) {
       n.onclick = function (e) { 
         e.preventDefault();
@@ -57,15 +56,16 @@ Future<String> nextChapJs(String url) async {
 
     document.addEventListener('scroll', function (event) {
         if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight-document.reachBottomCount) {
-            Print.postMessage("REACH BOTTOM OF THE PAGE");
             if (document.reachBottomCount > 100) {
               document.querySelector(".navi-change-chapter-btn-next").click();
+              return;
             }
+            Print.postMessage("REACH BOTTOM OF THE PAGE");
             document.reachBottomCount = 110;
         }
     });
 
     document.nextChapButtonsBinded = true;
-  };
+  } // if (!document.nextChapButtonsBinded)
   ''';
 }
