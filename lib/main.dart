@@ -4,6 +4,7 @@ import 'package:sticky_headers/sticky_headers.dart';
 import 'mangas_provider.dart';
 import 'manga_data.dart';
 import 'mangas_gridview.dart';
+import 'helpers.dart';
 
 void main() {
   runApp(ProviderScope(
@@ -29,27 +30,8 @@ class MyHomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, ScopedReader watch) {
     final mangas = watch(mangasProvider);
-
-    var now = DateTime.now();
-    var map = <String, List<Manga>>{};
-    for (var manga in mangas) {
-      final d = now.difference(manga.updatedAt).inDays;
-      String k = "";
-      if (d <= 1) {
-        k = "Today";
-      } else if (d <= 3) {
-        k = "Two Days Ago";
-      } else if (d <= 7) {
-        k = "Last Week";
-      } else if (d <= 14) {
-        k = "Last Two Weeks";
-      } else if (d <= 30) {
-        k = "Last Month";
-      }
-      if (k != "" && manga.rate >= 4.5) {
-        (map[k] ??= []).add(manga);
-      }
-    }
+    final map = Map<String, List<Manga>>();
+    groupMangasByUpdatedAt(mangas, map);
 
     void _handleRefreshPressed() async {
       final mangasNotifier = context.read(mangasProvider.notifier);
@@ -57,14 +39,8 @@ class MyHomePage extends ConsumerWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        // Here we take the value from the MyHomePage object that was created by
-        // the App.build method, and use it to set our appbar title.
-        title: Text("Latest"),
-      ),
+      // appBar: AppBar(title: Text("Latest")),
       body: Center(
-          // Center is a layout widget. It takes a single child and positions it
-          // in the middle of the parent.
           child: ListView.builder(
         itemCount: map.length,
         itemBuilder: (context, index) {
@@ -82,9 +58,8 @@ class MyHomePage extends ConsumerWidget {
                 ),
               ),
             ),
-            // content: Text(map.values.elementAt(index)[0].title),
             content: Container(
-              height: 600,
+              height: 740,
               child: MangasGridView(mangas: map.values.elementAt(index)),
             ),
           );

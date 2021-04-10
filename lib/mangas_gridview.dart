@@ -14,7 +14,7 @@ class MangasGridView extends StatelessWidget {
       padding: EdgeInsets.only(bottom: 8, top: 3),
       crossAxisSpacing: 5,
       mainAxisSpacing: 5,
-      crossAxisCount: 3,
+      crossAxisCount: 4,
       scrollDirection: Axis.horizontal,
       childAspectRatio: 334.0 / 225.0, // itemWidth / itemHeight
       children: mangas
@@ -40,8 +40,6 @@ class MangasGridView extends StatelessWidget {
                 );
               },
               child: Container(
-                  // width: 225,
-                  // height: 334,
                   padding: EdgeInsets.all(5.0),
                   decoration: BoxDecoration(
                     image: DecorationImage(
@@ -50,7 +48,7 @@ class MangasGridView extends StatelessWidget {
                     ),
                   ),
                   child: Opacity(
-                    opacity: 0.9,
+                    opacity: 0.8,
                     child: Align(
                       alignment: Alignment.bottomLeft,
                       child: Text(

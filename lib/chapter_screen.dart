@@ -24,6 +24,8 @@ class ChapterScreenState extends State<ChapterScreen> {
   @override
   Widget build(BuildContext context) {
     var jsRun = false;
+    print('\n- - - - - - - - - - - - -\nREADING: ${widget.manga.toStr()}\n\n');
+
     return WebView(
         initialUrl: widget.chapterUrl,
         javascriptMode: JavascriptMode.unrestricted,
