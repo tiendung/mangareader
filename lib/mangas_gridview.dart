@@ -1,16 +1,18 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:cached_network_image/cached_network_image.dart';
 import 'chapter_screen.dart';
 import 'manga_isar.dart';
+import 'manga_data.dart';
 import 'constants.dart';
 
 class MangasGridView extends StatelessWidget {
-  final List<Manga> mangas;
+  final SplayTreeSet<Manga> mangas;
   MangasGridView({required this.mangas});
 
   @override
   Widget build(BuildContext context) {
-    mangas.sort((a, b) => -a.compareValue().compareTo(b.compareValue()));
     return GridView.count(
       padding: EdgeInsets.only(bottom: 10, top: 5, right: 5),
       crossAxisSpacing: 8,

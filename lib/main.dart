@@ -1,8 +1,10 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sticky_headers/sticky_headers.dart';
 import 'manga_isar.dart';
-import 'package:mangareader/manga_extension.dart';
+import 'manga_data.dart';
 import 'mangas_provider.dart';
 import 'mangas_gridview.dart';
 import 'constants.dart';
@@ -36,7 +38,7 @@ class MyHomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, ScopedReader watch) {
     final mangas = watch(mangasProvider);
-    final map = Map<String, List<Manga>>();
+    final map = Map<String, SplayTreeSet<Manga>>();
     MangaHelpers.groupMangasByUpdatedAt(mangas, map);
 
     void _handleRefreshPressed() async {

@@ -26,53 +26,18 @@ class Manga {
   DateTime createdAt = DateTime.now();
   DateTime updatedAt = DateTime.now();
 
-  String firstChapterUrl() {
-    return lastChapterUrl.split('chapter_').first + 'chapter_1';
-  }
-
-  String defaultChapterUrl() {
-    return currentChapterUrl != "" ? currentChapterUrl : firstChapterUrl();
-  }
-
-  String lastChap() {
-    return lastChapterUrl.split('chapter_').last;
-  }
-
-  String currentChap() {
-    return defaultChapterUrl().split('chapter_').last;
-  }
-
-  String fullTitle() {
-    final t = (title.length <= 40) ? title : title.substring(0, 37) + '...';
-    return '$t (${currentChap()}/${lastChap()})';
-  }
-
-  double compareValue() {
-    return readCount * 10 + rate + (viewsCount / 999999999999.9);
-  }
-
-  String toStr() {
-    return 'Manga(#$id, $url, $rate, $updatedAt, $viewsCount)\n';
-  }
-
-  void updateCurrentReading(String chapterUrl) async {
-    currentChapterUrl = chapterUrl;
-    readCount++;
-    save();
-  }
+  @Index(indexType: IndexType.value)
+  double order = 0;
 
   void save() async {
-    final isar = await openIsar();
-    isar.writeTxn((isar) async {
-      await isar.mangas.put(this);
-    });
+    Manga.saveAll([this]);
   }
 
+// Class methods
   static Future<List<Manga>> loadAll() async {
     final isar = await openIsar();
     // await isar.writeTxn((isar) async => await isar.mangas.where().deleteAll());
-    final mangas = await isar.mangas.where().findAll();
-    return mangas;
+    return await isar.mangas.where().findAll();
   }
 
   static saveAll(List<Manga> mangas) async {

@@ -21,7 +21,7 @@ final _isar = <String, Isar>{};
 const _utf8Encoder = Utf8Encoder();
 
 final _schema =
-    '[{"name":"Manga","idProperty":"id","properties":[{"name":"id","type":3},{"name":"title","type":5},{"name":"coverImageUrl","type":5},{"name":"url","type":5},{"name":"rate","type":4},{"name":"viewsCount","type":3},{"name":"lastChapterUrl","type":5},{"name":"currentChapterUrl","type":5},{"name":"readCount","type":3},{"name":"createdAt","type":3},{"name":"updatedAt","type":3}],"indexes":[{"unique":false,"replace":false,"properties":[{"name":"title","indexType":2,"caseSensitive":true}]}],"links":[]}]';
+    '[{"name":"Manga","idProperty":"id","properties":[{"name":"id","type":3},{"name":"title","type":5},{"name":"coverImageUrl","type":5},{"name":"url","type":5},{"name":"rate","type":4},{"name":"viewsCount","type":3},{"name":"lastChapterUrl","type":5},{"name":"currentChapterUrl","type":5},{"name":"readCount","type":3},{"name":"createdAt","type":3},{"name":"updatedAt","type":3},{"name":"order","type":4}],"indexes":[{"unique":false,"replace":false,"properties":[{"name":"title","indexType":2,"caseSensitive":true}]},{"unique":false,"replace":false,"properties":[{"name":"order","indexType":0,"caseSensitive":null}]}],"links":[]}]';
 
 final _mangaCollection = <String, IsarCollection<Manga>>{};
 
@@ -75,9 +75,9 @@ Future<Isar> openIsar(
   final collectionPtrPtr = malloc<Pointer>();
   {
     nCall(IC.isar_get_collection(isarPtr, collectionPtrPtr, 0));
-    final propertyOffsetsPtr = malloc<Uint32>(11);
+    final propertyOffsetsPtr = malloc<Uint32>(12);
     IC.isar_get_property_offsets(collectionPtrPtr.value, propertyOffsetsPtr);
-    final propertyOffsets = propertyOffsetsPtr.asTypedList(11).toList();
+    final propertyOffsets = propertyOffsetsPtr.asTypedList(12).toList();
     malloc.free(propertyOffsetsPtr);
     _mangaCollection[name] = IsarCollectionImpl(
       isar,
@@ -149,7 +149,9 @@ class _MangaAdapter extends TypeAdapter<Manga> {
     final _createdAt = value9;
     final value10 = object.updatedAt;
     final _updatedAt = value10;
-    final size = dynamicSize + 90;
+    final value11 = object.order;
+    final _order = value11;
+    final size = dynamicSize + 98;
 
     late int bufferSize;
     if (existingBufferSize != null) {
@@ -166,7 +168,7 @@ class _MangaAdapter extends TypeAdapter<Manga> {
     }
     rawObj.buffer_length = size;
     final buffer = rawObj.buffer.asTypedList(size);
-    final writer = BinaryWriter(buffer, 90);
+    final writer = BinaryWriter(buffer, 98);
     writer.writeLong(offsets[0], _id);
     writer.writeBytes(offsets[1], _title);
     writer.writeBytes(offsets[2], _coverImageUrl);
@@ -178,6 +180,7 @@ class _MangaAdapter extends TypeAdapter<Manga> {
     writer.writeLong(offsets[8], _readCount);
     writer.writeDateTime(offsets[9], _createdAt);
     writer.writeDateTime(offsets[10], _updatedAt);
+    writer.writeDouble(offsets[11], _order);
     return bufferSize;
   }
 
@@ -196,6 +199,7 @@ class _MangaAdapter extends TypeAdapter<Manga> {
     object.readCount = reader.readLong(offsets[8]);
     object.createdAt = reader.readDateTime(offsets[9]);
     object.updatedAt = reader.readDateTime(offsets[10]);
+    object.order = reader.readDouble(offsets[11]);
     return object;
   }
 }
@@ -203,6 +207,10 @@ class _MangaAdapter extends TypeAdapter<Manga> {
 extension MangaQueryWhereSort on QueryBuilder<Manga, QWhere> {
   QueryBuilder<Manga, QAfterWhere> anyId() {
     return addWhereClause(WhereClause(-1, []));
+  }
+
+  QueryBuilder<Manga, QAfterWhere> anyOrder() {
+    return addWhereClause(WhereClause(1, []));
   }
 }
 
@@ -329,6 +337,39 @@ extension MangaQueryWhere on QueryBuilder<Manga, QWhereClause> {
       upper: ['$convertedValue\u{FFFFF}'],
       includeLower: true,
       includeUpper: true,
+    ));
+  }
+
+  QueryBuilder<Manga, QAfterWhereClause> orderBetween(
+      double lower, double upper,
+      {bool includeLower = true, bool includeUpper = true}) {
+    return addWhereClause(WhereClause(
+      1,
+      ['Double'],
+      upper: [upper],
+      includeUpper: includeUpper,
+      lower: [lower],
+      includeLower: includeLower,
+    ));
+  }
+
+  QueryBuilder<Manga, QAfterWhereClause> orderGreaterThan(double value,
+      {bool include = false}) {
+    return addWhereClause(WhereClause(
+      1,
+      ['Double'],
+      lower: [value],
+      includeLower: include,
+    ));
+  }
+
+  QueryBuilder<Manga, QAfterWhereClause> orderLessThan(double value,
+      {bool include = false}) {
+    return addWhereClause(WhereClause(
+      1,
+      ['Double'],
+      upper: [value],
+      includeUpper: include,
     ));
   }
 }
@@ -1065,6 +1106,42 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
       includeUpper: includeUpper,
     ));
   }
+
+  QueryBuilder<Manga, QAfterFilterCondition> orderGreaterThan(double value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Gt,
+      11,
+      'Double',
+      lower: value,
+      includeLower: include,
+    ));
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> orderLessThan(double value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Lt,
+      11,
+      'Double',
+      upper: value,
+      includeUpper: include,
+    ));
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> orderBetween(
+      double lower, double upper,
+      {bool includeLower = true, bool includeUpper = true}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Between,
+      11,
+      'Double',
+      lower: lower,
+      includeLower: includeLower,
+      upper: upper,
+      includeUpper: includeUpper,
+    ));
+  }
 }
 
 extension MangaQueryLinks on QueryBuilder<Manga, QFilterCondition> {}
@@ -1117,6 +1194,10 @@ extension MangaQueryWhereDistinct on QueryBuilder<Manga, QDistinct> {
   QueryBuilder<Manga, QDistinct> distinctByUpdatedAt() {
     return addDistinctByInternal(10);
   }
+
+  QueryBuilder<Manga, QDistinct> distinctByOrder() {
+    return addDistinctByInternal(11);
+  }
 }
 
 class _GeneratedIsarInterface implements IsarInterface {
@@ -1153,6 +1234,7 @@ class _GeneratedIsarInterface implements IsarInterface {
         'readCount': object.readCount,
         'createdAt': object.createdAt,
         'updatedAt': object.updatedAt,
+        'order': object.order,
       };
     }
     throw 'Unknown object type';

@@ -1,15 +1,17 @@
+import 'dart:collection';
+
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
+import 'manga_data.dart';
 import 'manga_isar.dart';
-import 'manga_extension.dart';
-import 'isar.g.dart';
 
-final mangasProvider = StateNotifierProvider<MangasNotifier, List<Manga>>(
-    (ref) => MangasNotifier()..update());
+final mangasProvider =
+    StateNotifierProvider<MangasNotifier, SplayTreeSet<Manga>>(
+        (ref) => MangasNotifier()..update());
 
-class MangasNotifier extends StateNotifier<List<Manga>> {
-  MangasNotifier() : super([]);
+class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
+  MangasNotifier() : super(SplayTreeSet<Manga>(MangaHelpers.compare));
 
   void update() async {
     await load();
@@ -71,7 +73,9 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
         ..coverImageUrl = coverImageMatch![1]!
         ..viewsCount = viewsCount
         ..updatedAt = updatedAt
-        ..rate = rate <= 5.0 ? rate : 4.6;
+        ..rate =
+            rate <= MangaConstants.MAX_RATE ? rate : MangaConstants.MIN_RATE
+        ..computeOrder(cached: false);
 
       mangas.add(manga);
       // print('\n- - - - - - - - - -\n$url, $isNewManga, ${manga.toStr()}\n\n');
@@ -79,12 +83,10 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
 
     Manga.saveAll(mangas);
     state.addAll(mangas);
-    state.sort((a, b) => -a.updatedAt.compareTo(b.updatedAt));
   }
 
   load() async {
-    final mangas = await Manga.loadAll();
-    mangas.sort((a, b) => -a.updatedAt.compareTo(b.updatedAt));
-    state = mangas;
+    state =
+        SplayTreeSet<Manga>.from(await Manga.loadAll(), MangaHelpers.compare);
   }
 }

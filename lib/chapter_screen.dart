@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'chapter_screen_js.dart' as ChapterScreenJs;
 import 'manga_isar.dart';
+import 'manga_data.dart';
 
 class ChapterScreen extends StatefulWidget {
   final Manga manga;
