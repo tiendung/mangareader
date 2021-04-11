@@ -47,14 +47,12 @@ extension MangaMethods on Manga {
 
 extension MangaHelpers on Manga {
   static int compare(a, b) {
-    final c = b.updatedAt.compareTo(a.updatedAt);
-    if (c != 0) return c;
-    if (a.readCount > b.readCount) return -1;
-    if (a.readCount < b.readCount) return 1;
-    if (a.rate < b.rate) return -1;
-    if (a.rate > b.rate) return 1;
-    if (a.viewsCount < b.viewsCount) return -1;
-    return 1;
+    var c = b.updatedAt.compareTo(a.updatedAt);
+    if (c == 0) c = b.readCount.compareTo(a.readCount);
+    if (c == 0) c = b.rate.compareTo(a.rate);
+    if (c == 0) c = b.viewsCount.compareTo(a.viewsCount);
+    if (c == 0) return 1;
+    return c;
   }
 
   static String dayDiffToStr(d) {
@@ -73,17 +71,15 @@ extension MangaHelpers on Manga {
     }
   }
 
-  static groupMangasByUpdatedAt(
-      SplayTreeSet<Manga> mangas, Map<String, SplayTreeSet<Manga>> map) {
+  static void groupMangasByUpdatedAt(
+      SplayTreeSet<Manga> mangas, Map<String, int> map) {
     final now = DateTime.now();
-    for (var manga in mangas) {
+    for (int i = 0; i < mangas.length; i++) {
+      final manga = mangas.elementAt(i);
       final title = dayDiffToStr(now.difference(manga.updatedAt).inDays);
-      if (title != "" && manga.rate >= MangaConstants.MIN_RATE) {
-        (map[title] ??= SplayTreeSet<Manga>(MangaHelpers.compare)).add(manga);
-        if (manga.url == MangaConstants.TRACK_URL) {
-          print('\n- - - - \nFOUND@groupMangasByUpdatedAt: ${manga.toStr()}\n');
-        }
-      }
+      if (title != "") map[title] = i;
+      // if (manga.url == MangaConstants.TRACK_URL)
+      //   print('\n- - -\nFOUND @ groupMangasByUpdatedAt: ${manga.toStr()}\n');
     }
   }
 }

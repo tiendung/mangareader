@@ -38,7 +38,7 @@ class MyHomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, ScopedReader watch) {
     final mangas = watch(mangasProvider);
-    final map = Map<String, SplayTreeSet<Manga>>();
+    final map = Map<String, int>();
     MangaHelpers.groupMangasByUpdatedAt(mangas, map);
 
     return Scaffold(
@@ -64,7 +64,10 @@ class MyHomePage extends ConsumerWidget {
             ),
             content: Container(
               height: 740,
-              child: MangasGridView(mangas: map.values.elementAt(index)),
+              child: MangasGridView(
+                  mangas: mangas,
+                  begin: index == 0 ? 0 : map.values.elementAt(index - 1) + 1,
+                  end: map.values.elementAt(index)),
             ),
           );
         },

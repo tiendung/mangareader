@@ -13,7 +13,7 @@ final mangasProvider =
 class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
   MangasNotifier() : super(SplayTreeSet<Manga>(MangaHelpers.compare));
 
-  void update() async {
+  Future<void> update() async {
     await load();
     for (var i = 1; i <= MangaConstants.MAX_PAGE; i++) {
       await crawl('https://manganelo.com/genre-all/$i');
@@ -87,8 +87,10 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
     state.addAll(mangas);
   }
 
-  load() async {
-    state =
-        SplayTreeSet<Manga>.from(await Manga.loadAll(), MangaHelpers.compare);
+  Future<void> load() async {
+    final sortedMangas = SplayTreeSet<Manga>(MangaHelpers.compare);
+    for (var manga in await Manga.loadAll())
+      if (manga.rate >= MangaConstants.MIN_RATE) sortedMangas.add(manga);
+    state = sortedMangas;
   }
 }
