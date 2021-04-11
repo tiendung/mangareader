@@ -21,7 +21,6 @@ class MangasNotifier extends StateNotifier<List<Manga>> {
   }
 
   Future<void> crawl(String url) async {
-    final isar = await openIsar();
     final now = DateTime.now();
 
     final res = await Dio().get(url);
