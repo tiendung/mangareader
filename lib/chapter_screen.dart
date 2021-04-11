@@ -24,7 +24,7 @@ class ChapterScreenState extends State<ChapterScreen> {
 
   @override
   Widget build(BuildContext context) {
-    var jsRun = false;
+    var jsRun = 0;
     print('\n- - - - - - - - - - - - -\nREADING: ${widget.manga.toStr()}\n\n');
 
     return Scaffold(
@@ -52,7 +52,7 @@ class ChapterScreenState extends State<ChapterScreen> {
           JavascriptChannel(
               name: 'HideUnwantedElems',
               onMessageReceived: (m) {
-                jsRun = true;
+                jsRun++;
                 _controller!
                     .evaluateJavascript(ChapterScreenJs.getNextChapUrlJs);
               }),
@@ -66,16 +66,17 @@ class ChapterScreenState extends State<ChapterScreen> {
         onWebViewCreated: (webViewController) {
           _controller = webViewController;
         },
-        onPageStarted: (_) {
-          jsRun = false;
-        },
-        onPageFinished: (_) {
-          print('\n- - - -\nScroll to: ${widget.manga.currentScrollY}');
-          _controller!.evaluateJavascript(
-              'window.scrollTo(0, ${widget.manga.currentScrollY});');
-        },
+        onPageStarted: (_) {},
+        onPageFinished: (_) {},
         onProgress: (_) {
-          if (jsRun) return;
+          if (jsRun > 0) {
+            if (jsRun > 1) return;
+            final js = 'window.scrollTo(0, ${widget.manga.currentScrollY});';
+            print('\n- - - -\n$js');
+            _controller!.evaluateJavascript(js);
+            jsRun++;
+            return;
+          }
           _controller!.evaluateJavascript(ChapterScreenJs.hideUnwantedElemsJs);
         },
       ),
