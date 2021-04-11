@@ -38,6 +38,18 @@ class MyHomePage extends ConsumerWidget {
     final map = Map<String, int>();
     MangaHelpers.groupMangasByUpdatedAt(mangas, map);
 
+    void _floatButtonPressed() async {
+      await context.read(mangasProvider.notifier).load();
+      final snackBar = SnackBar(
+        content: Text('${mangas.length} mangas loaded'),
+        action: SnackBarAction(
+          label: 'Undo',
+          onPressed: () {},
+        ),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    }
+
     return Scaffold(
       // appBar: AppBar(title: Text("Latest")),
       body: Center(
@@ -71,11 +83,9 @@ class MyHomePage extends ConsumerWidget {
       )),
       floatingActionButtonLocation: FloatingActionButtonLocation.miniStartFloat,
       floatingActionButton: FloatingActionButton(
-        onPressed: () => context.read(mangasProvider.notifier).load(),
-        tooltip: 'Refresh',
-        child: Icon(Icons.refresh),
-        backgroundColor: Colors.blueGrey.withOpacity(0.8),
-      ),
+          // tooltip: 'Refresh',
+          onPressed: _floatButtonPressed,
+          child: Icon(Icons.refresh)),
     );
   }
 }
