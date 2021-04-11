@@ -18,8 +18,8 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
     for (var i = 1; i <= MangaConstants.MAX_PAGE; i++) {
       await crawl('https://manganelo.com/genre-all/$i');
       await crawl('https://manganelo.com/genre-all/$i?type=topview');
+      await load();
     }
-    await load();
   }
 
   Future<void> crawl(String url) async {
@@ -74,10 +74,12 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
         ..viewsCount = viewsCount
         ..updatedAt = updatedAt
         ..rate =
-            rate <= MangaConstants.MAX_RATE ? rate : MangaConstants.MIN_RATE
-        ..computeOrder(cached: false);
+            rate <= MangaConstants.MAX_RATE ? rate : MangaConstants.MIN_RATE;
 
       mangas.add(manga);
+      if (manga.url == MangaConstants.TRACK_URL) {
+        print('\n- - - - \nFOUND @ crawl: ${manga.toStr()}\n');
+      }
       // print('\n- - - - - - - - - -\n$url, $isNewManga, ${manga.toStr()}\n\n');
     });
 

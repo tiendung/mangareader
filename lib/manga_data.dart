@@ -1,9 +1,9 @@
-import 'dart:math';
 import 'dart:collection';
 import 'dart:io' show Platform;
 import 'manga_isar.dart';
 
 extension MangaConstants on Manga {
+  static const TRACK_URL = 'https://manganelo.com/manga/tm923455';
   static const MIN_RATE = 4.6;
   static const MAX_RATE = 5.0;
   static const MIN_VIEWS = 300000;
@@ -34,21 +34,8 @@ extension MangaMethods on Manga {
     return '$t (${currentChap()}/${lastChap()})';
   }
 
-  // ignore: non_constant_identifier_names
-  static DateTime _BEGIN_DATE = DateTime.utc(2020, 1, 1);
-  double computeOrder({cached = true}) {
-    if (!cached || order == 0) {
-      order = updatedAt.difference(_BEGIN_DATE).inDays * 10000000 +
-          readCount.abs() * 100 +
-          (rate * 10).abs() +
-          viewsCount.abs() / 1000000000000 +
-          Random().nextInt(999999) / 1000000000000000000;
-    }
-    return order;
-  }
-
   String toStr() {
-    return 'Manga(#$id, $url, $rate, $updatedAt, $viewsCount)\n';
+    return 'Manga(#$id, $url, $rate, $updatedAt, $viewsCount, $order)\n';
   }
 
   void updateCurrentReading(String chapterUrl) async {
@@ -59,7 +46,16 @@ extension MangaMethods on Manga {
 }
 
 extension MangaHelpers on Manga {
-  static int compare(a, b) => -a.order.compareTo(b.order);
+  static int compare(a, b) {
+    final c = b.updatedAt.compareTo(a.updatedAt);
+    if (c != 0) return c;
+    if (a.readCount > b.readCount) return -1;
+    if (a.readCount < b.readCount) return 1;
+    if (a.rate < b.rate) return -1;
+    if (a.rate > b.rate) return 1;
+    if (a.viewsCount < b.viewsCount) return -1;
+    return 1;
+  }
 
   static String dayDiffToStr(d) {
     if (d <= 1) {
@@ -81,9 +77,12 @@ extension MangaHelpers on Manga {
       SplayTreeSet<Manga> mangas, Map<String, SplayTreeSet<Manga>> map) {
     final now = DateTime.now();
     for (var manga in mangas) {
-      final k = dayDiffToStr(now.difference(manga.updatedAt).inDays);
-      if (k != "" && manga.rate >= MangaConstants.MIN_RATE) {
-        (map[k] ??= SplayTreeSet<Manga>(MangaHelpers.compare)).add(manga);
+      final title = dayDiffToStr(now.difference(manga.updatedAt).inDays);
+      if (title != "" && manga.rate >= MangaConstants.MIN_RATE) {
+        (map[title] ??= SplayTreeSet<Manga>(MangaHelpers.compare)).add(manga);
+        if (manga.url == MangaConstants.TRACK_URL) {
+          print('\n- - - - \nFOUND@groupMangasByUpdatedAt: ${manga.toStr()}\n');
+        }
       }
     }
   }

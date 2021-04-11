@@ -41,11 +41,6 @@ class MyHomePage extends ConsumerWidget {
     final map = Map<String, SplayTreeSet<Manga>>();
     MangaHelpers.groupMangasByUpdatedAt(mangas, map);
 
-    void _handleRefreshPressed() async {
-      final mangasNotifier = context.read(mangasProvider.notifier);
-      mangasNotifier.update();
-    }
-
     return Scaffold(
       // appBar: AppBar(title: Text("Latest")),
       body: Center(
@@ -76,7 +71,7 @@ class MyHomePage extends ConsumerWidget {
       )),
       floatingActionButtonLocation: FloatingActionButtonLocation.miniStartFloat,
       floatingActionButton: FloatingActionButton(
-        onPressed: _handleRefreshPressed,
+        onPressed: () => context.read(mangasProvider.notifier).load(),
         tooltip: 'Refresh',
         child: Icon(Icons.refresh),
         backgroundColor: Colors.blueGrey.withOpacity(0.8),
