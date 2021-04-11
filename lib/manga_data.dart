@@ -31,7 +31,7 @@ extension MangaMethods on Manga {
 
   String fullTitle() {
     final t = (title.length <= 40) ? title : title.substring(0, 37) + '...';
-    return '$t (${currentChap()}/${lastChap()})';
+    return '$t (${readCount == 0 ? 0 : currentChap()}/${lastChap()})';
   }
 
   String toStr() {

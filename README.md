@@ -38,5 +38,4 @@ ws://192.168.1.12:41000/auth-code/ws=
 
 ## Getting Started
 
-- [Lab: Write your first Flutter app](https://flutter.dev/docs/get-started/codelab)
-- [Cookbook: Useful Flutter samples](https://flutter.dev/docs/cookbook)
+https://www.geeksforgeeks.org/flutter-implementing-pull-to-refresh/
