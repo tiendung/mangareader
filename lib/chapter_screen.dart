@@ -38,9 +38,15 @@ class ChapterScreenState extends State<ChapterScreen> {
                 print(m.message);
               }),
           JavascriptChannel(
+              name: 'UpdateCurrentScrollY',
+              onMessageReceived: (m) {
+                print('\n- - - -\nScrollY: ${m.message}');
+                widget.manga.updateCurrentScrollY(m.message);
+              }),
+          JavascriptChannel(
               name: 'UpdateCurrentReading',
               onMessageReceived: (m) {
-                print('\n----\n${m.message}');
+                print('\n- - - -\nReading: ${m.message}');
                 widget.manga.updateCurrentReading(m.message);
               }),
           JavascriptChannel(
@@ -62,6 +68,11 @@ class ChapterScreenState extends State<ChapterScreen> {
         },
         onPageStarted: (_) {
           jsRun = false;
+        },
+        onPageFinished: (_) {
+          print('\n- - - -\nScroll to: ${widget.manga.currentScrollY}');
+          _controller!.evaluateJavascript(
+              'window.scrollTo(0, ${widget.manga.currentScrollY});');
         },
         onProgress: (_) {
           if (jsRun) return;

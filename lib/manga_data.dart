@@ -43,6 +43,11 @@ extension MangaMethods on Manga {
     readCount++;
     save();
   }
+
+  updateCurrentScrollY(String scrollY) {
+    currentScrollY = double.parse(scrollY).floor();
+    save();
+  }
 }
 
 extension MangaHelpers on Manga {

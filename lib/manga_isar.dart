@@ -29,6 +29,8 @@ class Manga {
   @Index(indexType: IndexType.value)
   double order = 0;
 
+  int currentScrollY = 0;
+
   void save() async {
     Manga.saveAll([this]);
   }

@@ -12,10 +12,13 @@ final hideUnwantedElemsJs = '''
     document.querySelector(".body-site>div:nth-of-type(4)").style.display = "none";
     document.querySelectorAll("div.container-chapter-reader>div").forEach(function(e,i) { e.style.display = "none"; });
     Print.postMessage('HA HA');
+
     document.querySelectorAll(".navi-change-chapter")[1].style.display = "none";
     document.querySelectorAll(".navi-change-chapter-btn-prev").forEach(function(e,i) { e.style.display = "none"; });
     document.querySelectorAll(".navi-change-chapter-btn-next").forEach(function(e,i) { e.style.display = "none"; });
     HideUnwantedElems.postMessage("DONE");
+
+    UpdateCurrentReading.postMessage(document.location.href);
 ''';
 
 Future<String> nextChapJs(String url) async {
@@ -42,26 +45,36 @@ Future<String> nextChapJs(String url) async {
     document.querySelectorAll(".navi-change-chapter-btn-next").forEach(function(n,i) {
       n.onclick = function (e) { 
         e.preventDefault();
+        // Show nextChap image
         document.querySelector(".container-chapter-reader").innerHTML = document.nextChapContent;
         document.nextChapDiv.innerHTML = "";
-        x = document.querySelector(".navi-change-chapter>option[data-c='"+document.nextChapId+"']");
-        x.selected = "selected";
+        // And update that user reading the next chap
+        UpdateCurrentReading.postMessage(document.location.href.split('chapter_')[0] + 'chapter_' + document.nextChapId);
         window.scrollTo(0, 0);
+        // window.scrollTo({top: 0, left: 0, behavior: 'smooth'});
+        
+        var x = document.querySelector(".navi-change-chapter>option[data-c='"+document.nextChapId+"']");
+        x.selected = "selected";
         if (x.previousSibling) {
           GetNextChapUrl.postMessage(location.href.split("chapter_")[0]+"chapter_"+x.previousSibling.getAttribute("data-c"));
         } else { this.style.display="none"; }
-        UpdateCurrentReading.postMessage(document.location.href.split('chapter_')[0] + 'chapter_' + x.nextSibling.getAttribute("data-c"));
       };
     });
 
+    var scrollCount = 0;
     document.addEventListener('scroll', function (event) {
         if ((window.innerHeight + window.scrollY) >= document.body.offsetHeight-document.reachBottomCount) {
-            if (document.reachBottomCount > 100) {
-              document.querySelector(".navi-change-chapter-btn-next").click();
-              return;
-            }
-            Print.postMessage("REACH BOTTOM OF THE PAGE");
-            document.reachBottomCount = 110;
+          if (document.reachBottomCount > 100) {
+            document.querySelector(".navi-change-chapter-btn-next").click();
+            return;
+          }
+          Print.postMessage("REACH BOTTOM OF THE PAGE");
+          document.reachBottomCount = 110;
+        }
+        scrollCount++;
+        if (scrollCount == 60) {
+          scrollCount = 0;
+          UpdateCurrentScrollY.postMessage(window.scrollY);
         }
     });
 

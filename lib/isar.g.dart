@@ -21,7 +21,7 @@ final _isar = <String, Isar>{};
 const _utf8Encoder = Utf8Encoder();
 
 final _schema =
-    '[{"name":"Manga","idProperty":"id","properties":[{"name":"id","type":3},{"name":"title","type":5},{"name":"coverImageUrl","type":5},{"name":"url","type":5},{"name":"rate","type":4},{"name":"viewsCount","type":3},{"name":"lastChapterUrl","type":5},{"name":"currentChapterUrl","type":5},{"name":"readCount","type":3},{"name":"createdAt","type":3},{"name":"updatedAt","type":3},{"name":"order","type":4}],"indexes":[{"unique":false,"replace":false,"properties":[{"name":"title","indexType":2,"caseSensitive":true}]},{"unique":false,"replace":false,"properties":[{"name":"order","indexType":0,"caseSensitive":null}]}],"links":[]}]';
+    '[{"name":"Manga","idProperty":"id","properties":[{"name":"id","type":3},{"name":"title","type":5},{"name":"coverImageUrl","type":5},{"name":"url","type":5},{"name":"rate","type":4},{"name":"viewsCount","type":3},{"name":"lastChapterUrl","type":5},{"name":"currentChapterUrl","type":5},{"name":"readCount","type":3},{"name":"createdAt","type":3},{"name":"updatedAt","type":3},{"name":"order","type":4},{"name":"currentScrollY","type":3}],"indexes":[{"unique":false,"replace":false,"properties":[{"name":"title","indexType":2,"caseSensitive":true}]},{"unique":false,"replace":false,"properties":[{"name":"order","indexType":0,"caseSensitive":null}]}],"links":[]}]';
 
 final _mangaCollection = <String, IsarCollection<Manga>>{};
 
@@ -75,9 +75,9 @@ Future<Isar> openIsar(
   final collectionPtrPtr = malloc<Pointer>();
   {
     nCall(IC.isar_get_collection(isarPtr, collectionPtrPtr, 0));
-    final propertyOffsetsPtr = malloc<Uint32>(12);
+    final propertyOffsetsPtr = malloc<Uint32>(13);
     IC.isar_get_property_offsets(collectionPtrPtr.value, propertyOffsetsPtr);
-    final propertyOffsets = propertyOffsetsPtr.asTypedList(12).toList();
+    final propertyOffsets = propertyOffsetsPtr.asTypedList(13).toList();
     malloc.free(propertyOffsetsPtr);
     _mangaCollection[name] = IsarCollectionImpl(
       isar,
@@ -151,7 +151,9 @@ class _MangaAdapter extends TypeAdapter<Manga> {
     final _updatedAt = value10;
     final value11 = object.order;
     final _order = value11;
-    final size = dynamicSize + 98;
+    final value12 = object.currentScrollY;
+    final _currentScrollY = value12;
+    final size = dynamicSize + 106;
 
     late int bufferSize;
     if (existingBufferSize != null) {
@@ -168,7 +170,7 @@ class _MangaAdapter extends TypeAdapter<Manga> {
     }
     rawObj.buffer_length = size;
     final buffer = rawObj.buffer.asTypedList(size);
-    final writer = BinaryWriter(buffer, 98);
+    final writer = BinaryWriter(buffer, 106);
     writer.writeLong(offsets[0], _id);
     writer.writeBytes(offsets[1], _title);
     writer.writeBytes(offsets[2], _coverImageUrl);
@@ -181,6 +183,7 @@ class _MangaAdapter extends TypeAdapter<Manga> {
     writer.writeDateTime(offsets[9], _createdAt);
     writer.writeDateTime(offsets[10], _updatedAt);
     writer.writeDouble(offsets[11], _order);
+    writer.writeLong(offsets[12], _currentScrollY);
     return bufferSize;
   }
 
@@ -200,6 +203,7 @@ class _MangaAdapter extends TypeAdapter<Manga> {
     object.createdAt = reader.readDateTime(offsets[9]);
     object.updatedAt = reader.readDateTime(offsets[10]);
     object.order = reader.readDouble(offsets[11]);
+    object.currentScrollY = reader.readLong(offsets[12]);
     return object;
   }
 }
@@ -1142,6 +1146,67 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
       includeUpper: includeUpper,
     ));
   }
+
+  QueryBuilder<Manga, QAfterFilterCondition> currentScrollYEqualTo(int value) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Eq,
+      12,
+      'Long',
+      lower: value,
+      upper: value,
+    ));
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> currentScrollYIn(
+      List<int> values) {
+    return group((q) {
+      for (var i = 0; i < values.length; i++) {
+        if (i == values.length - 1) {
+          return q.currentScrollYEqualTo(values[i]);
+        } else {
+          q = q.currentScrollYEqualTo(values[i]).or();
+        }
+      }
+      throw 'Empty values is unsupported.';
+    });
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> currentScrollYGreaterThan(
+      int value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Gt,
+      12,
+      'Long',
+      lower: value,
+      includeLower: include,
+    ));
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> currentScrollYLessThan(int value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Lt,
+      12,
+      'Long',
+      upper: value,
+      includeUpper: include,
+    ));
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> currentScrollYBetween(
+      int lower, int upper,
+      {bool includeLower = true, bool includeUpper = true}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Between,
+      12,
+      'Long',
+      lower: lower,
+      includeLower: includeLower,
+      upper: upper,
+      includeUpper: includeUpper,
+    ));
+  }
 }
 
 extension MangaQueryLinks on QueryBuilder<Manga, QFilterCondition> {}
@@ -1198,6 +1263,10 @@ extension MangaQueryWhereDistinct on QueryBuilder<Manga, QDistinct> {
   QueryBuilder<Manga, QDistinct> distinctByOrder() {
     return addDistinctByInternal(11);
   }
+
+  QueryBuilder<Manga, QDistinct> distinctByCurrentScrollY() {
+    return addDistinctByInternal(12);
+  }
 }
 
 class _GeneratedIsarInterface implements IsarInterface {
@@ -1235,6 +1304,7 @@ class _GeneratedIsarInterface implements IsarInterface {
         'createdAt': object.createdAt,
         'updatedAt': object.updatedAt,
         'order': object.order,
+        'currentScrollY': object.currentScrollY,
       };
     }
     throw 'Unknown object type';
