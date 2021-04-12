@@ -332,28 +332,21 @@ packages:
       name: isar
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.2.0"
-  isar_annotation:
-    dependency: transitive
-    description:
-      name: isar_annotation
-      url: "https://pub.dartlang.org"
-    source: hosted
-    version: "0.2.0"
+    version: "0.4.0"
   isar_flutter_libs:
     dependency: "direct main"
     description:
       name: isar_flutter_libs
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.2.0"
+    version: "0.4.0"
   isar_generator:
     dependency: "direct dev"
     description:
       name: isar_generator
       url: "https://pub.dartlang.org"
     source: hosted
-    version: "0.2.0"
+    version: "0.4.0"
   js:
     dependency: transitive
     description:

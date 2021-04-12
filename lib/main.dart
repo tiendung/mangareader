@@ -72,11 +72,13 @@ class MyHomePage extends ConsumerWidget {
               ),
             ),
             content: Container(
-              height: 740,
+              height: index == 0 ? 500 : 740,
               child: MangasGridView(
-                  mangas: mangas,
-                  begin: index == 0 ? 0 : map.values.elementAt(index - 1) + 1,
-                  end: map.values.elementAt(index)),
+                mangas: mangas,
+                begin: index == 0 ? 0 : map.values.elementAt(index - 1) + 1,
+                end: map.values.elementAt(index),
+                count: index == 0 ? 3 : 4,
+              ),
             ),
           );
         },

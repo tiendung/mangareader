@@ -10,14 +10,18 @@ class MangasGridView extends StatelessWidget {
   final SplayTreeSet<Manga> mangas;
   final int begin;
   final int end;
+  final int? count;
   MangasGridView(
-      {required this.mangas, required this.begin, required this.end});
+      {required this.mangas,
+      required this.begin,
+      required this.end,
+      this.count});
 
   @override
   Widget build(BuildContext context) {
     return GridView.builder(
       gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-        crossAxisCount: 4,
+        crossAxisCount: count == null ? 4 : count!,
         crossAxisSpacing: 8,
         mainAxisSpacing: 8,
         childAspectRatio: 334.0 / 225.0, // itemWidth / itemHeight

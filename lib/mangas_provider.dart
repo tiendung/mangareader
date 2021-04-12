@@ -21,7 +21,7 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
       await load();
       for (var i = 1; i <= MangaConstants.MAX_PAGE; i++) {
         await crawl('https://manganelo.com/genre-all/$i');
-        await crawl('https://manganelo.com/genre-all/$i?type=topview');
+        // await crawl('https://manganelo.com/genre-all/$i?type=topview');
         await load();
       }
       mangasCrawling = false;
@@ -45,7 +45,7 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
           RegExp(r'class="genres-item-chap .+?" href="(.+?)"').firstMatch(s);
       if (lastChapMatch == null) return;
 
-      final url = urlAndTitleMatch[1]!.trim().toLowerCase();
+      // final url = urlAndTitleMatch[1]!.trim().toLowerCase();
       // final manga = await Manga.findByUrl(url);
       // final isNewManga = manga.id == null;
       var isNewManga = false;

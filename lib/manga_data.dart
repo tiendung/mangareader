@@ -8,6 +8,7 @@ extension MangaConstants on Manga {
   static const MAX_RATE = 5.0;
   static const MIN_VIEWS = 300000;
   static const MAX_UPDATED_DAYS = 30;
+  static const MIN_READ_COUNT = 2;
   // ignore: non_constant_identifier_names
   static final MAX_PAGE = Platform.isAndroid ? 65 : 5;
 }
@@ -52,11 +53,11 @@ extension MangaMethods on Manga {
 
 extension MangaHelpers on Manga {
   static int compare(a, b) {
-    var c = b.updatedAt.compareTo(a.updatedAt);
-    if (c == 0) c = b.readCount.compareTo(a.readCount);
+    var c = b.readCount.compareTo(a.readCount);
+    if (c == 0) c = b.updatedAt.compareTo(a.updatedAt);
     if (c == 0) c = b.rate.compareTo(a.rate);
     if (c == 0) c = b.viewsCount.compareTo(a.viewsCount);
-    if (c == 0) return 1;
+    if (c == 0) return a.id.compareTo(b.url);
     return c;
   }
 
@@ -81,8 +82,12 @@ extension MangaHelpers on Manga {
     final now = DateTime.now();
     for (int i = 0; i < mangas.length; i++) {
       final manga = mangas.elementAt(i);
-      final title = dayDiffToStr(now.difference(manga.updatedAt).inDays);
-      if (title != "") map[title] = i;
+      if (manga.readCount > MangaConstants.MIN_READ_COUNT) {
+        map["My Reading"] = i;
+      } else {
+        final title = dayDiffToStr(now.difference(manga.updatedAt).inDays);
+        if (title != "") map[title] = i;
+      }
       // if (manga.url == MangaConstants.TRACK_URL)
       //   print('\n- - -\nFOUND @ groupMangasByUpdatedAt: ${manga.toStr()}\n');
     }
