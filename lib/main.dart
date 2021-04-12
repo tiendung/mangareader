@@ -45,10 +45,10 @@ class MyHomePage extends ConsumerWidget {
       await context.read(mangasProvider.notifier).updateNewest();
       final snackBar = SnackBar(
         content: Text('${mangas.length} mangas loaded'),
-        action: SnackBarAction(
-          label: 'Undo',
-          onPressed: () {},
-        ),
+        // action: SnackBarAction(
+        //   label: 'Hide',
+        //   onPressed: () {},
+        // ),
       );
       ScaffoldMessenger.of(context).showSnackBar(snackBar);
     }

@@ -17,27 +17,27 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
       : super(SplayTreeSet<Manga>(MangaHelpers.sortByUpdatedDateDesc));
 
   Future<void> update() async {
-    await load();
-    mangasCrawling = true;
     await updateNewest();
-    for (var i = 1; i <= MangaConstants.MAX_PAGE; i++) {
+    mangasCrawling = true;
+    for (var i = 1; i <= 23; i++) {
       await crawl(
-          'https://manganelo.com/advanced_search?s=all&sts=completed&orby=topview&page=$i',
+          'https://manganelo.com/advanced_search?s=all&orby=topview&page=$i',
+          // 'https://manganelo.com/advanced_search?s=all&sts=completed&orby=topview&page=$i',
           false);
-      await load();
     }
+    await load();
     mangasCrawling = false;
   }
 
   Future<void> updateNewest() async {
-    if (mangasCrawling == false) {
-      mangasCrawling = true;
-      for (var i = 1; i <= MangaConstants.MAX_PAGE; i++) {
-        await crawl('https://manganelo.com/genre-all/$i', true);
-        await load();
-      }
-      mangasCrawling = false;
+    if (mangasCrawling) return;
+    mangasCrawling = true;
+    await load();
+    for (var i = 1; i <= MangaConstants.MAX_PAGE; i++) {
+      await crawl('https://manganelo.com/genre-all/$i', true);
+      await load();
     }
+    mangasCrawling = false;
   }
 
   Future<void> crawl(String pageUrl, bool isNewest) async {
@@ -49,6 +49,10 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
 
     final minRate =
         isNewest ? MangaConstants.MIN_RATE : MangaConstants.MIN_COMPLETED_RATE;
+
+    final minViews = isNewest
+        ? MangaConstants.MIN_VIEWS
+        : MangaConstants.MIN_COMPLETED_VIEWS;
 
     splits.forEach((s) async {
       var urlAndTitleMatch =
@@ -72,7 +76,7 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
       final viewsMatch =
           RegExp(r'class="genres-item-view">(.+?)<').firstMatch(s);
       final viewsCount = int.parse(viewsMatch![1]!.replaceAll(",", ""));
-      if (isNewManga && viewsCount < MangaConstants.MIN_VIEWS) return;
+      if (isNewManga && viewsCount < minViews) return;
 
       final rateMatch =
           RegExp(r'<em class="genres-item-rate">(.+?)</em>').firstMatch(s);
@@ -97,8 +101,7 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
         ..coverImageUrl = coverImageMatch![1]!
         ..viewsCount = viewsCount
         ..updatedAt = updatedAt
-        ..rate =
-            rate <= MangaConstants.MAX_RATE ? rate : MangaConstants.MIN_RATE;
+        ..rate = rate <= MangaConstants.MAX_RATE ? rate : minRate;
 
       mangas.add(manga);
       // if (manga.url == MangaConstants.TRACK_URL)
