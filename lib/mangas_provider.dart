@@ -10,15 +10,21 @@ final mangasProvider =
     StateNotifierProvider<MangasNotifier, SplayTreeSet<Manga>>(
         (ref) => MangasNotifier()..update());
 
+var mangasCrawling = false;
+
 class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
   MangasNotifier() : super(SplayTreeSet<Manga>(MangaHelpers.compare));
 
   Future<void> update() async {
-    await load();
-    for (var i = 1; i <= MangaConstants.MAX_PAGE; i++) {
-      await crawl('https://manganelo.com/genre-all/$i');
-      await crawl('https://manganelo.com/genre-all/$i?type=topview');
+    if (mangasCrawling == false) {
+      mangasCrawling = true;
       await load();
+      for (var i = 1; i <= MangaConstants.MAX_PAGE; i++) {
+        await crawl('https://manganelo.com/genre-all/$i');
+        await crawl('https://manganelo.com/genre-all/$i?type=topview');
+        await load();
+      }
+      mangasCrawling = false;
     }
   }
 
@@ -40,6 +46,8 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
       if (lastChapMatch == null) return;
 
       final url = urlAndTitleMatch[1]!.trim().toLowerCase();
+      // final manga = await Manga.findByUrl(url);
+      // final isNewManga = manga.id == null;
       var isNewManga = false;
       final manga = state.firstWhere((x) => x.url == url, orElse: () {
         isNewManga = true;
@@ -77,9 +85,8 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
             rate <= MangaConstants.MAX_RATE ? rate : MangaConstants.MIN_RATE;
 
       mangas.add(manga);
-      if (manga.url == MangaConstants.TRACK_URL) {
+      if (manga.url == MangaConstants.TRACK_URL)
         print('\n- - - - \nFOUND @ crawl: ${manga.toStr()}\n');
-      }
       // print('\n- - - - - - - - - -\n$url, $isNewManga, ${manga.toStr()}\n\n');
     });
 

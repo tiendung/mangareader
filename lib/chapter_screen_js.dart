@@ -5,21 +5,24 @@ final getNextChapUrlJs = '''
     GetNextChapUrl.postMessage(n.href);
 ''';
 
-final hideUnwantedElemsJs = '''
-    document.querySelectorAll("div.container")[2].style.display = "none";
-    document.querySelectorAll("div.container>div").forEach(function(e,i) { if (i==2||i==4) e.style.paddingTop = "2em"; else e.style.display = "none"; });
-    document.querySelector(".body-site>div:nth-of-type(2)").style.display = "none";
-    document.querySelector(".body-site>div:nth-of-type(4)").style.display = "none";
-    document.querySelectorAll("div.container-chapter-reader>div").forEach(function(e,i) { e.style.display = "none"; });
-    Print.postMessage('HA HA');
+String hideUnwantedElemsJsAndScroll(int currentScrollY) {
+  return '''
+  document.querySelectorAll("div.container")[2].style.display = "none";
+  document.querySelectorAll("div.container>div").forEach(function(e,i) { if (i==2||i==4) e.style.paddingTop = "2em"; else e.style.display = "none"; });
+  document.querySelector(".body-site>div:nth-of-type(2)").style.display = "none";
+  document.querySelector(".body-site>div:nth-of-type(4)").style.display = "none";
+  document.querySelectorAll("div.container-chapter-reader>div").forEach(function(e,i) { e.style.display = "none"; });
 
-    document.querySelectorAll(".navi-change-chapter")[1].style.display = "none";
-    document.querySelectorAll(".navi-change-chapter-btn-prev").forEach(function(e,i) { e.style.display = "none"; });
-    document.querySelectorAll(".navi-change-chapter-btn-next").forEach(function(e,i) { e.style.display = "none"; });
-    HideUnwantedElems.postMessage("DONE");
-
-    UpdateCurrentReading.postMessage(document.location.href);
+  document.querySelectorAll(".navi-change-chapter")[1].style.display = "none";
+  document.querySelectorAll(".navi-change-chapter-btn-prev").forEach(function(e,i) { e.style.display = "none"; });
+  document.querySelectorAll(".navi-change-chapter-btn-next").forEach(function(e,i) { e.style.display = "none"; });
+  
+  Print.postMessage('HA HA');
+  window.scrollTo(0, $currentScrollY);
+  UpdateCurrentReading.postMessage(document.location.href);
+  HideUnwantedElems.postMessage("DONE");
 ''';
+}
 
 Future<String> nextChapJs(String url) async {
   // print('GET NEXT CHAP $url');

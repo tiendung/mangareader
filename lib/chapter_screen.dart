@@ -52,7 +52,7 @@ class ChapterScreenState extends State<ChapterScreen> {
           JavascriptChannel(
               name: 'HideUnwantedElems',
               onMessageReceived: (m) {
-                jsRun++;
+                jsRun = 1;
                 _controller!
                     .evaluateJavascript(ChapterScreenJs.getNextChapUrlJs);
               }),
@@ -66,18 +66,15 @@ class ChapterScreenState extends State<ChapterScreen> {
         onWebViewCreated: (webViewController) {
           _controller = webViewController;
         },
-        onPageStarted: (_) {},
+        onPageStarted: (_) {
+          jsRun = 0;
+        },
         onPageFinished: (_) {},
         onProgress: (_) {
-          if (jsRun > 0) {
-            if (jsRun > 1) return;
-            final js = 'window.scrollTo(0, ${widget.manga.currentScrollY});';
-            print('\n- - - -\n$js');
-            _controller!.evaluateJavascript(js);
-            jsRun++;
-            return;
-          }
-          _controller!.evaluateJavascript(ChapterScreenJs.hideUnwantedElemsJs);
+          if (jsRun > 0) return;
+          _controller!.evaluateJavascript(
+              ChapterScreenJs.hideUnwantedElemsJsAndScroll(
+                  widget.manga.currentScrollY));
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.miniStartFloat,

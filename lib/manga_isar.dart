@@ -11,6 +11,7 @@ class Manga {
 
   String coverImageUrl = "";
 
+  @Index(indexType: IndexType.value)
   String url = "";
 
   double rate = 0;
@@ -36,15 +37,30 @@ class Manga {
   }
 
 // Class methods
+  static Isar? isar;
+
+  static initIsar() async {
+    if (isar == null) {
+      isar = await openIsar();
+    }
+  }
+
+  static Future<Manga> findByUrl(String url) async {
+    final mangas = await loadAll();
+    return mangas.firstWhere((x) => x.url == url, orElse: () {
+      return Manga();
+    });
+  }
+
   static Future<List<Manga>> loadAll() async {
-    final isar = await openIsar();
-    // await isar.writeTxn((isar) async => await isar.mangas.where().deleteAll());
-    return await isar.mangas.where().findAll();
+    await initIsar();
+    // await isar!.writeTxn((isar) async => await isar.mangas.where().deleteAll());
+    return await isar!.mangas.where().findAll();
   }
 
   static saveAll(List<Manga> mangas) async {
-    final isar = await openIsar();
-    isar.writeTxn((isar) async {
+    await initIsar();
+    isar!.writeTxn((isar) async {
       await isar.mangas.putAll(mangas);
     });
   }
