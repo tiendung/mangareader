@@ -8,14 +8,8 @@ import 'manga_item.dart';
 
 class MangasGridView extends StatelessWidget {
   final SplayTreeSet<Manga> mangas;
-  final int begin;
-  final int end;
   final int? count;
-  MangasGridView(
-      {required this.mangas,
-      required this.begin,
-      required this.end,
-      this.count});
+  MangasGridView({required this.mangas, this.count});
 
   @override
   Widget build(BuildContext context) {
@@ -28,9 +22,9 @@ class MangasGridView extends StatelessWidget {
       ),
       padding: EdgeInsets.only(bottom: 10, top: 5, right: 5),
       scrollDirection: Axis.horizontal,
-      itemCount: end - begin + 1,
+      itemCount: mangas.length,
       itemBuilder: (BuildContext context, int index) {
-        final manga = mangas.elementAt(index + begin);
+        final manga = mangas.elementAt(index);
         return GestureDetector(
             onLongPress: () {
               Navigator.push(

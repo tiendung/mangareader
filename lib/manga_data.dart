@@ -5,8 +5,9 @@ import 'manga_isar.dart';
 extension MangaConstants on Manga {
   static const TRACK_URL = 'https://manganelo.com/manga/tm923455';
   static const MIN_RATE = 4.6;
+  static const MIN_COMPLETED_RATE = 4.88;
   static const MAX_RATE = 5.0;
-  static const MIN_VIEWS = 300000;
+  static const MIN_VIEWS = 500000;
   static const MAX_UPDATED_DAYS = 30;
   static const MIN_READ_COUNT = 2;
   // ignore: non_constant_identifier_names
@@ -32,7 +33,7 @@ extension MangaMethods on Manga {
 
   String fullTitle() {
     final t = (title.length <= 40) ? title : title.substring(0, 37) + '...';
-    return '$t (${readCount == 0 ? 0 : currentChap()}/${lastChap()})';
+    return '[$rate] $t (${readCount == 0 ? 0 : currentChap()}/${lastChap()})';
   }
 
   String toStr() {
@@ -52,12 +53,29 @@ extension MangaMethods on Manga {
 }
 
 extension MangaHelpers on Manga {
-  static int compare(a, b) {
+  static int sortByUpdatedDateDesc(a, b) {
+    // if (c == 0) c = b.readCount.compareTo(a.readCount);
+    // if (c == 0) c = b.rate.compareTo(a.rate);
+    // if (c == 0) c = b.viewsCount.compareTo(a.viewsCount);
+    var c = b.updatedAt.compareTo(a.updatedAt);
+    if (c == 0) return a.url.compareTo(b.url);
+    return c;
+  }
+
+  static int sortByReadThenRateDesc(a, b) {
     var c = b.readCount.compareTo(a.readCount);
-    if (c == 0) c = b.updatedAt.compareTo(a.updatedAt);
     if (c == 0) c = b.rate.compareTo(a.rate);
     if (c == 0) c = b.viewsCount.compareTo(a.viewsCount);
-    if (c == 0) return a.id.compareTo(b.url);
+    if (c == 0) return a.id.compareTo(b.id);
+    return c;
+  }
+
+  static int sortBy(a, b) {
+    // if (c == 0) c = b.readCount.compareTo(a.readCount);
+    // if (c == 0) c = b.rate.compareTo(a.rate);
+    // if (c == 0) c = b.viewsCount.compareTo(a.viewsCount);
+    var c = b.updatedAt.compareTo(a.updatedAt);
+    if (c == 0) return a.id.compareTo(b.id);
     return c;
   }
 
@@ -77,16 +95,24 @@ extension MangaHelpers on Manga {
     }
   }
 
-  static void groupMangasByUpdatedAt(
-      SplayTreeSet<Manga> mangas, Map<String, int> map) {
+  static void groupMangas(
+      SplayTreeSet<Manga> mangas, Map<String, SplayTreeSet<Manga>> map) {
     final now = DateTime.now();
+    map["Recommend"] = SplayTreeSet<Manga>(MangaHelpers.sortByReadThenRateDesc);
     for (int i = 0; i < mangas.length; i++) {
       final manga = mangas.elementAt(i);
-      if (manga.readCount > MangaConstants.MIN_READ_COUNT) {
-        map["My Reading"] = i;
+      if (manga.readCount >= MangaConstants.MIN_READ_COUNT) {
+        map["Recommend"]!.add(manga);
       } else {
+        if (manga.rate >= MangaConstants.MIN_COMPLETED_RATE) {
+          map["Recommend"]!.add(manga);
+        }
         final title = dayDiffToStr(now.difference(manga.updatedAt).inDays);
-        if (title != "") map[title] = i;
+        if (title != "") {
+          (map[title] ??=
+                  SplayTreeSet<Manga>(MangaHelpers.sortByReadThenRateDesc))
+              .add(manga);
+        }
       }
       // if (manga.url == MangaConstants.TRACK_URL)
       //   print('\n- - -\nFOUND @ groupMangasByUpdatedAt: ${manga.toStr()}\n');

@@ -1,7 +1,10 @@
+import 'dart:collection';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sticky_headers/sticky_headers.dart';
 import 'manga_data.dart';
+import 'manga_isar.dart';
 import 'mangas_provider.dart';
 import 'mangas_gridview.dart';
 import 'constants.dart';
@@ -35,11 +38,11 @@ class MyHomePage extends ConsumerWidget {
   @override
   Widget build(BuildContext context, ScopedReader watch) {
     final mangas = watch(mangasProvider);
-    final map = Map<String, int>();
-    MangaHelpers.groupMangasByUpdatedAt(mangas, map);
+    final map = Map<String, SplayTreeSet<Manga>>();
+    MangaHelpers.groupMangas(mangas, map);
 
     void _floatButtonPressed() async {
-      await context.read(mangasProvider.notifier).update();
+      await context.read(mangasProvider.notifier).updateNewest();
       final snackBar = SnackBar(
         content: Text('${mangas.length} mangas loaded'),
         action: SnackBarAction(
@@ -72,11 +75,9 @@ class MyHomePage extends ConsumerWidget {
               ),
             ),
             content: Container(
-              height: index == 0 ? 500 : 740,
+              height: index == 0 ? 480 : 740,
               child: MangasGridView(
-                mangas: mangas,
-                begin: index == 0 ? 0 : map.values.elementAt(index - 1) + 1,
-                end: map.values.elementAt(index),
+                mangas: map.values.elementAt(index),
                 count: index == 0 ? 3 : 4,
               ),
             ),
