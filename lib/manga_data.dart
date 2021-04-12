@@ -5,14 +5,15 @@ import 'manga_isar.dart';
 extension MangaConstants on Manga {
   static const TRACK_URL = 'https://manganelo.com/manga/tm923455';
   static const MIN_RATE = 4.6;
-  static const MIN_COMPLETED_RATE = 4.8;
+  static const TOP_MIN_RATE = 4.8;
   static const MAX_RATE = 5.0;
   static const MIN_VIEWS = 500000;
-  static const MIN_COMPLETED_VIEWS = 10000000;
+  static const TOP_MIN_VIEWS = 10000000;
   static const MAX_UPDATED_DAYS = 30;
   static const MIN_READ_COUNT = 2;
   // ignore: non_constant_identifier_names
   static final MAX_PAGE = Platform.isAndroid ? 65 : 5;
+  static const TOP_MAX_PAGE = 23;
 }
 
 extension MangaMethods on Manga {
@@ -105,8 +106,8 @@ extension MangaHelpers on Manga {
       if (manga.readCount >= MangaConstants.MIN_READ_COUNT) {
         map["Recommend"]!.add(manga);
       } else {
-        if (manga.rate >= MangaConstants.MIN_COMPLETED_RATE &&
-            manga.viewsCount >= MangaConstants.MIN_COMPLETED_VIEWS) {
+        if (manga.rate >= MangaConstants.TOP_MIN_RATE &&
+            manga.viewsCount >= MangaConstants.TOP_MIN_VIEWS) {
           map["Recommend"]!.add(manga);
         }
         final title = dayDiffToStr(now.difference(manga.updatedAt).inDays);

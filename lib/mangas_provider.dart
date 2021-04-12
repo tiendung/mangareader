@@ -19,7 +19,7 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
   Future<void> update() async {
     await updateNewest();
     mangasCrawling = true;
-    for (var i = 1; i <= 23; i++) {
+    for (var i = 1; i <= MangaConstants.TOP_MAX_PAGE; i++) {
       await crawl(
           'https://manganelo.com/advanced_search?s=all&orby=topview&page=$i',
           // 'https://manganelo.com/advanced_search?s=all&sts=completed&orby=topview&page=$i',
@@ -48,11 +48,10 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
     final List<Manga> mangas = [];
 
     final minRate =
-        isNewest ? MangaConstants.MIN_RATE : MangaConstants.MIN_COMPLETED_RATE;
+        isNewest ? MangaConstants.MIN_RATE : MangaConstants.TOP_MIN_RATE;
 
-    final minViews = isNewest
-        ? MangaConstants.MIN_VIEWS
-        : MangaConstants.MIN_COMPLETED_VIEWS;
+    final minViews =
+        isNewest ? MangaConstants.MIN_VIEWS : MangaConstants.TOP_MIN_VIEWS;
 
     splits.forEach((s) async {
       var urlAndTitleMatch =
