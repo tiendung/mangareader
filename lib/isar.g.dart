@@ -7,6 +7,7 @@ import 'dart:typed_data';
 import 'dart:io';
 import 'package:isar/isar.dart';
 import 'package:isar/src/isar_native.dart';
+import 'package:isar/src/isar_interface.dart';
 import 'package:isar/src/query_builder.dart';
 import 'package:ffi/ffi.dart';
 import 'package:path/path.dart' as p;
@@ -14,62 +15,89 @@ import 'manga_isar.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:flutter/widgets.dart';
 
+export 'package:isar/isar.dart';
+
+final _isar = <String, Isar>{};
 const _utf8Encoder = Utf8Encoder();
 
 final _schema =
-    '[{"name":"Manga","idProperty":"id","properties":[{"name":"id","type":3},{"name":"title","type":5},{"name":"coverImageUrl","type":5},{"name":"url","type":5},{"name":"rate","type":4},{"name":"viewsCount","type":3},{"name":"lastChapterUrl","type":5},{"name":"currentChapterUrl","type":5},{"name":"readCount","type":3},{"name":"createdAt","type":3},{"name":"updatedAt","type":3},{"name":"order","type":4},{"name":"currentScrollY","type":3}],"indexes":[{"unique":false,"replace":false,"properties":[{"name":"title","indexType":2,"caseSensitive":true}]},{"unique":false,"replace":false,"properties":[{"name":"url","indexType":0,"caseSensitive":true}]},{"unique":false,"replace":false,"properties":[{"name":"order","indexType":0,"caseSensitive":null}]}],"links":[]}]';
+    '[{"name":"Manga","idProperty":"id","properties":[{"name":"id","type":3},{"name":"title","type":5},{"name":"coverImageUrl","type":5},{"name":"url","type":5},{"name":"rate","type":4},{"name":"viewsCount","type":3},{"name":"lastChapterUrl","type":5},{"name":"currentChapterUrl","type":5},{"name":"readCount","type":3},{"name":"createdAt","type":3},{"name":"updatedAt","type":3},{"name":"order","type":4},{"name":"currentScrollY","type":3}],"indexes":[{"unique":false,"replace":false,"properties":[{"name":"title","indexType":2,"caseSensitive":true}]},{"unique":false,"replace":false,"properties":[{"name":"order","indexType":0,"caseSensitive":null}]}],"links":[]}]';
+
+final _mangaCollection = <String, IsarCollection<Manga>>{};
 
 Future<Isar> openIsar(
     {String name = 'isar',
     String? directory,
     int maxSize = 1000000000,
     Uint8List? encryptionKey}) async {
+  assert(name.isNotEmpty);
   final path = await _preparePath(directory);
-  return openIsarInternal(
-      name: name,
-      directory: path,
-      maxSize: maxSize,
-      encryptionKey: encryptionKey,
-      schema: _schema,
-      getCollections: (isar) {
-        final collectionPtrPtr = malloc<Pointer>();
-        final propertyOffsetsPtr = malloc<Uint32>(13);
-        final propertyOffsets = propertyOffsetsPtr.asTypedList(13);
-        final collections = <String, IsarCollection>{};
-        nCall(IC.isar_get_collection(isar.ptr, collectionPtrPtr, 0));
-        IC.isar_get_property_offsets(
-            collectionPtrPtr.value, propertyOffsetsPtr);
-        collections['Manga'] = IsarCollectionImpl<Manga>(
-          isar: isar,
-          adapter: _MangaAdapter(),
-          ptr: collectionPtrPtr.value,
-          propertyOffsets: propertyOffsets.sublist(0, 13),
-          propertyIds: {
-            'id': 0,
-            'title': 1,
-            'coverImageUrl': 2,
-            'url': 3,
-            'rate': 4,
-            'viewsCount': 5,
-            'lastChapterUrl': 6,
-            'currentChapterUrl': 7,
-            'readCount': 8,
-            'createdAt': 9,
-            'updatedAt': 10,
-            'order': 11,
-            'currentScrollY': 12
-          },
-          indexIds: {'title': 0, 'url': 1, 'order': 2},
-          linkIds: {},
-          backlinkIds: {},
-          getId: (obj) => obj.id,
-          setId: (obj, id) => obj.id = id,
-        );
-        malloc.free(propertyOffsetsPtr);
-        malloc.free(collectionPtrPtr);
+  if (_isar[name] != null) {
+    return _isar[name]!;
+  }
+  await Directory(p.join(path, name)).create(recursive: true);
+  initializeIsarCore();
+  IC.isar_connect_dart_api(NativeApi.postCObject);
 
-        return collections;
-      });
+  final isarPtrPtr = malloc<Pointer>();
+  final namePtr = name.toNativeUtf8();
+  final pathPtr = path.toNativeUtf8();
+  IC.isar_get_instance(isarPtrPtr, namePtr.cast());
+  if (isarPtrPtr.value.address == 0) {
+    final schemaPtr = _schema.toNativeUtf8();
+    var encKeyPtr = Pointer<Uint8>.fromAddress(0);
+    if (encryptionKey != null) {
+      assert(encryptionKey.length == 32,
+          'Encryption keys need to contain 32 byte (256bit).');
+      encKeyPtr = malloc(32);
+      encKeyPtr.asTypedList(32).setAll(0, encryptionKey);
+    }
+    final receivePort = ReceivePort();
+    final nativePort = receivePort.sendPort.nativePort;
+    final stream = wrapIsarPort(receivePort);
+    IC.isar_create_instance(isarPtrPtr, namePtr.cast(), pathPtr.cast(), maxSize,
+        schemaPtr.cast(), encKeyPtr, nativePort);
+    await stream.first;
+    malloc.free(schemaPtr);
+    if (encryptionKey != null) {
+      malloc.free(encKeyPtr);
+    }
+  }
+  malloc.free(namePtr);
+  malloc.free(pathPtr);
+
+  final isarPtr = isarPtrPtr.value;
+  malloc.free(isarPtrPtr);
+
+  final isar = IsarImpl(name, isarPtr);
+  _isar[name] = isar;
+
+  final collectionPtrPtr = malloc<Pointer>();
+  {
+    nCall(IC.isar_get_collection(isarPtr, collectionPtrPtr, 0));
+    final propertyOffsetsPtr = malloc<Uint32>(13);
+    IC.isar_get_property_offsets(collectionPtrPtr.value, propertyOffsetsPtr);
+    final propertyOffsets = propertyOffsetsPtr.asTypedList(13).toList();
+    malloc.free(propertyOffsetsPtr);
+    _mangaCollection[name] = IsarCollectionImpl(
+      isar,
+      _MangaAdapter(),
+      collectionPtrPtr.value,
+      propertyOffsets,
+      (obj) => obj.id,
+      (obj, id) => obj.id = id,
+    );
+  }
+  malloc.free(collectionPtrPtr);
+
+  IsarInterface.initialize(_GeneratedIsarInterface());
+  Isar.addCloseListener(_onClose);
+
+  return isar;
+}
+
+void _onClose(String name) {
+  _isar.remove(name);
 }
 
 Future<String> _preparePath(String? path) async {
@@ -79,6 +107,12 @@ Future<String> _preparePath(String? path) async {
     return p.join(dir.path, path ?? 'isar');
   } else {
     return path;
+  }
+}
+
+extension GetMangaCollection on Isar {
+  IsarCollection<Manga> get mangas {
+    return _mangaCollection[name]!;
   }
 }
 
@@ -172,66 +206,113 @@ class _MangaAdapter extends TypeAdapter<Manga> {
     object.currentScrollY = reader.readLong(offsets[12]);
     return object;
   }
-
-  @override
-  P deserializeProperty<P>(BinaryReader reader, int propertyIndex, int offset) {
-    switch (propertyIndex) {
-      case 0:
-        return (reader.readLongOrNull(offset)) as P;
-      case 1:
-        return (reader.readString(offset)) as P;
-      case 2:
-        return (reader.readString(offset)) as P;
-      case 3:
-        return (reader.readString(offset)) as P;
-      case 4:
-        return (reader.readDouble(offset)) as P;
-      case 5:
-        return (reader.readLong(offset)) as P;
-      case 6:
-        return (reader.readString(offset)) as P;
-      case 7:
-        return (reader.readString(offset)) as P;
-      case 8:
-        return (reader.readLong(offset)) as P;
-      case 9:
-        return (reader.readDateTime(offset)) as P;
-      case 10:
-        return (reader.readDateTime(offset)) as P;
-      case 11:
-        return (reader.readDouble(offset)) as P;
-      case 12:
-        return (reader.readLong(offset)) as P;
-      default:
-        throw 'Illegal propertyIndex';
-    }
-  }
-}
-
-extension GetCollection on Isar {
-  IsarCollection<Manga> get mangas {
-    return getCollection('Manga');
-  }
 }
 
 extension MangaQueryWhereSort on QueryBuilder<Manga, QWhere> {
   QueryBuilder<Manga, QAfterWhere> anyId() {
-    return addWhereClause(WhereClause(indexName: 'id'));
-  }
-
-  QueryBuilder<Manga, QAfterWhere> anyUrl() {
-    return addWhereClause(WhereClause(indexName: 'url'));
+    return addWhereClause(WhereClause(-1, []));
   }
 
   QueryBuilder<Manga, QAfterWhere> anyOrder() {
-    return addWhereClause(WhereClause(indexName: 'order'));
+    return addWhereClause(WhereClause(1, []));
   }
 }
 
 extension MangaQueryWhere on QueryBuilder<Manga, QWhereClause> {
+  QueryBuilder<Manga, QAfterWhereClause> idEqualTo(int? id) {
+    return addWhereClause(WhereClause(
+      -1,
+      ['Long'],
+      upper: [id],
+      includeUpper: true,
+      lower: [id],
+      includeLower: true,
+    ));
+  }
+
+  QueryBuilder<Manga, QAfterWhereClause> idNotEqualTo(int? id) {
+    final cloned = addWhereClause(WhereClause(
+      -1,
+      ['Long'],
+      upper: [id],
+      includeUpper: false,
+    ));
+    return cloned.addWhereClause(WhereClause(
+      -1,
+      ['Long'],
+      lower: [id],
+      includeLower: false,
+    ));
+  }
+
+  QueryBuilder<Manga, QAfterWhereClause> idBetween(int? lower, int? upper,
+      {bool includeLower = true, bool includeUpper = true}) {
+    return addWhereClause(WhereClause(
+      -1,
+      ['Long'],
+      upper: [upper],
+      includeUpper: includeUpper,
+      lower: [lower],
+      includeLower: includeLower,
+    ));
+  }
+
+  QueryBuilder<Manga, QAfterWhereClause> idIn(List<int?> values) {
+    var q = this;
+    for (var i = 0; i < values.length; i++) {
+      if (i == values.length - 1) {
+        return q.idEqualTo(values[i]);
+      } else {
+        q = q.idEqualTo(values[i]).or();
+      }
+    }
+    throw 'Empty values is unsupported.';
+  }
+
+  QueryBuilder<Manga, QAfterWhereClause> idGreaterThan(int? value,
+      {bool include = false}) {
+    return addWhereClause(WhereClause(
+      -1,
+      ['Long'],
+      lower: [value],
+      includeLower: include,
+    ));
+  }
+
+  QueryBuilder<Manga, QAfterWhereClause> idLessThan(int? value,
+      {bool include = false}) {
+    return addWhereClause(WhereClause(
+      -1,
+      ['Long'],
+      upper: [value],
+      includeUpper: include,
+    ));
+  }
+
+  QueryBuilder<Manga, QAfterWhereClause> idIsNull() {
+    return addWhereClause(WhereClause(
+      -1,
+      ['Long'],
+      upper: [null],
+      includeUpper: true,
+      lower: [null],
+      includeLower: true,
+    ));
+  }
+
+  QueryBuilder<Manga, QAfterWhereClause> idIsNotNull() {
+    return addWhereClause(WhereClause(
+      -1,
+      ['Long'],
+      lower: [null],
+      includeLower: false,
+    ));
+  }
+
   QueryBuilder<Manga, QAfterWhereClause> titleWordEqualTo(String title) {
     return addWhereClause(WhereClause(
-      indexName: 'title',
+      0,
+      ['StringWords'],
       upper: [title],
       includeUpper: true,
       lower: [title],
@@ -239,43 +320,23 @@ extension MangaQueryWhere on QueryBuilder<Manga, QWhereClause> {
     ));
   }
 
+  QueryBuilder<Manga, QAfterWhereClause> titleWordIn(List<String> values) {
+    var q = this;
+    for (var i = 0; i < values.length; i++) {
+      if (i == values.length - 1) {
+        return q.titleWordEqualTo(values[i]);
+      } else {
+        q = q.titleWordEqualTo(values[i]).or();
+      }
+    }
+    throw 'Empty values is unsupported.';
+  }
+
   QueryBuilder<Manga, QAfterWhereClause> titleWordStartsWith(String value) {
     final convertedValue = value;
     return addWhereClause(WhereClause(
-      indexName: 'title',
-      lower: [convertedValue],
-      upper: ['$convertedValue\u{FFFFF}'],
-      includeLower: true,
-      includeUpper: true,
-    ));
-  }
-
-  QueryBuilder<Manga, QAfterWhereClause> urlEqualTo(String url) {
-    return addWhereClause(WhereClause(
-      indexName: 'url',
-      upper: [url],
-      includeUpper: true,
-      lower: [url],
-      includeLower: true,
-    ));
-  }
-
-  QueryBuilder<Manga, QAfterWhereClause> urlNotEqualTo(String url) {
-    return addWhereClause(WhereClause(
-      indexName: 'url',
-      upper: [url],
-      includeUpper: false,
-    )).addWhereClause(WhereClause(
-      indexName: 'url',
-      lower: [url],
-      includeLower: false,
-    ));
-  }
-
-  QueryBuilder<Manga, QAfterWhereClause> urlStartsWith(String value) {
-    final convertedValue = value;
-    return addWhereClause(WhereClause(
-      indexName: 'url',
+      0,
+      ['StringWords'],
       lower: [convertedValue],
       upper: ['$convertedValue\u{FFFFF}'],
       includeLower: true,
@@ -287,7 +348,8 @@ extension MangaQueryWhere on QueryBuilder<Manga, QWhereClause> {
       double lower, double upper,
       {bool includeLower = true, bool includeUpper = true}) {
     return addWhereClause(WhereClause(
-      indexName: 'order',
+      1,
+      ['Double'],
       upper: [upper],
       includeUpper: includeUpper,
       lower: [lower],
@@ -298,7 +360,8 @@ extension MangaQueryWhere on QueryBuilder<Manga, QWhereClause> {
   QueryBuilder<Manga, QAfterWhereClause> orderGreaterThan(double value,
       {bool include = false}) {
     return addWhereClause(WhereClause(
-      indexName: 'order',
+      1,
+      ['Double'],
       lower: [value],
       includeLower: include,
     ));
@@ -307,7 +370,8 @@ extension MangaQueryWhere on QueryBuilder<Manga, QWhereClause> {
   QueryBuilder<Manga, QAfterWhereClause> orderLessThan(double value,
       {bool include = false}) {
     return addWhereClause(WhereClause(
-      indexName: 'order',
+      1,
+      ['Double'],
       upper: [value],
       includeUpper: include,
     ));
@@ -316,62 +380,107 @@ extension MangaQueryWhere on QueryBuilder<Manga, QWhereClause> {
 
 extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
   QueryBuilder<Manga, QAfterFilterCondition> idIsNull() {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Eq,
-      property: 'id',
-      value: null,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Eq,
+      0,
+      'Long',
+      lower: null,
+      upper: null,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> idEqualTo(int? value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Eq,
-      property: 'id',
-      value: value,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Eq,
+      0,
+      'Long',
+      lower: value,
+      upper: value,
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> idGreaterThan(int? value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Gt,
-      property: 'id',
-      value: value,
+  QueryBuilder<Manga, QAfterFilterCondition> idIn(List<int?> values) {
+    return group((q) {
+      for (var i = 0; i < values.length; i++) {
+        if (i == values.length - 1) {
+          return q.idEqualTo(values[i]);
+        } else {
+          q = q.idEqualTo(values[i]).or();
+        }
+      }
+      throw 'Empty values is unsupported.';
+    });
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> idGreaterThan(int? value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Gt,
+      0,
+      'Long',
+      lower: value,
+      includeLower: include,
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> idLessThan(int? value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Lt,
-      property: 'id',
-      value: value,
+  QueryBuilder<Manga, QAfterFilterCondition> idLessThan(int? value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Lt,
+      0,
+      'Long',
+      upper: value,
+      includeUpper: include,
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> idBetween(int? lower, int? upper) {
-    return addFilterCondition(FilterCondition.between(
-      property: 'id',
+  QueryBuilder<Manga, QAfterFilterCondition> idBetween(int? lower, int? upper,
+      {bool includeLower = true, bool includeUpper = true}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Between,
+      0,
+      'Long',
       lower: lower,
+      includeLower: includeLower,
       upper: upper,
+      includeUpper: includeUpper,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> titleEqualTo(String value,
       {bool caseSensitive = true}) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Eq,
-      property: 'title',
-      value: value,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Eq,
+      1,
+      'String',
+      lower: value,
+      upper: value,
       caseSensitive: caseSensitive,
     ));
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> titleIn(List<String> values,
+      {bool caseSensitive = true}) {
+    return group((q) {
+      for (var i = 0; i < values.length; i++) {
+        if (i == values.length - 1) {
+          return q.titleEqualTo(values[i], caseSensitive: caseSensitive);
+        } else {
+          q = q.titleEqualTo(values[i], caseSensitive: caseSensitive).or();
+        }
+      }
+      throw 'Empty values is unsupported.';
+    });
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> titleStartsWith(String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.StartsWith,
-      property: 'title',
-      value: convertedValue,
+    return addFilterCondition(QueryCondition(
+      ConditionType.StartsWith,
+      1,
+      'String',
+      lower: convertedValue,
       caseSensitive: caseSensitive,
     ));
   }
@@ -379,10 +488,11 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
   QueryBuilder<Manga, QAfterFilterCondition> titleEndsWith(String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.EndsWith,
-      property: 'title',
-      value: convertedValue,
+    return addFilterCondition(QueryCondition(
+      ConditionType.EndsWith,
+      1,
+      'String',
+      lower: convertedValue,
       caseSensitive: caseSensitive,
     ));
   }
@@ -390,42 +500,65 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
   QueryBuilder<Manga, QAfterFilterCondition> titleContains(String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Matches,
-      property: 'title',
-      value: '*$convertedValue*',
+    return addFilterCondition(QueryCondition(
+      ConditionType.Contains,
+      1,
+      'String',
+      lower: convertedValue,
       caseSensitive: caseSensitive,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> titleMatches(String pattern,
       {bool caseSensitive = true}) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Matches,
-      property: 'title',
-      value: pattern,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Matches,
+      1,
+      'String',
+      lower: pattern,
       caseSensitive: caseSensitive,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> coverImageUrlEqualTo(String value,
       {bool caseSensitive = true}) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Eq,
-      property: 'coverImageUrl',
-      value: value,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Eq,
+      2,
+      'String',
+      lower: value,
+      upper: value,
       caseSensitive: caseSensitive,
     ));
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> coverImageUrlIn(
+      List<String> values,
+      {bool caseSensitive = true}) {
+    return group((q) {
+      for (var i = 0; i < values.length; i++) {
+        if (i == values.length - 1) {
+          return q.coverImageUrlEqualTo(values[i],
+              caseSensitive: caseSensitive);
+        } else {
+          q = q
+              .coverImageUrlEqualTo(values[i], caseSensitive: caseSensitive)
+              .or();
+        }
+      }
+      throw 'Empty values is unsupported.';
+    });
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> coverImageUrlStartsWith(
       String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.StartsWith,
-      property: 'coverImageUrl',
-      value: convertedValue,
+    return addFilterCondition(QueryCondition(
+      ConditionType.StartsWith,
+      2,
+      'String',
+      lower: convertedValue,
       caseSensitive: caseSensitive,
     ));
   }
@@ -433,10 +566,11 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
   QueryBuilder<Manga, QAfterFilterCondition> coverImageUrlEndsWith(String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.EndsWith,
-      property: 'coverImageUrl',
-      value: convertedValue,
+    return addFilterCondition(QueryCondition(
+      ConditionType.EndsWith,
+      2,
+      'String',
+      lower: convertedValue,
       caseSensitive: caseSensitive,
     ));
   }
@@ -444,10 +578,11 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
   QueryBuilder<Manga, QAfterFilterCondition> coverImageUrlContains(String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Matches,
-      property: 'coverImageUrl',
-      value: '*$convertedValue*',
+    return addFilterCondition(QueryCondition(
+      ConditionType.Contains,
+      2,
+      'String',
+      lower: convertedValue,
       caseSensitive: caseSensitive,
     ));
   }
@@ -455,31 +590,49 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
   QueryBuilder<Manga, QAfterFilterCondition> coverImageUrlMatches(
       String pattern,
       {bool caseSensitive = true}) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Matches,
-      property: 'coverImageUrl',
-      value: pattern,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Matches,
+      2,
+      'String',
+      lower: pattern,
       caseSensitive: caseSensitive,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> urlEqualTo(String value,
       {bool caseSensitive = true}) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Eq,
-      property: 'url',
-      value: value,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Eq,
+      3,
+      'String',
+      lower: value,
+      upper: value,
       caseSensitive: caseSensitive,
     ));
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> urlIn(List<String> values,
+      {bool caseSensitive = true}) {
+    return group((q) {
+      for (var i = 0; i < values.length; i++) {
+        if (i == values.length - 1) {
+          return q.urlEqualTo(values[i], caseSensitive: caseSensitive);
+        } else {
+          q = q.urlEqualTo(values[i], caseSensitive: caseSensitive).or();
+        }
+      }
+      throw 'Empty values is unsupported.';
+    });
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> urlStartsWith(String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.StartsWith,
-      property: 'url',
-      value: convertedValue,
+    return addFilterCondition(QueryCondition(
+      ConditionType.StartsWith,
+      3,
+      'String',
+      lower: convertedValue,
       caseSensitive: caseSensitive,
     ));
   }
@@ -487,10 +640,11 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
   QueryBuilder<Manga, QAfterFilterCondition> urlEndsWith(String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.EndsWith,
-      property: 'url',
-      value: convertedValue,
+    return addFilterCondition(QueryCondition(
+      ConditionType.EndsWith,
+      3,
+      'String',
+      lower: convertedValue,
       caseSensitive: caseSensitive,
     ));
   }
@@ -498,100 +652,160 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
   QueryBuilder<Manga, QAfterFilterCondition> urlContains(String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Matches,
-      property: 'url',
-      value: '*$convertedValue*',
+    return addFilterCondition(QueryCondition(
+      ConditionType.Contains,
+      3,
+      'String',
+      lower: convertedValue,
       caseSensitive: caseSensitive,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> urlMatches(String pattern,
       {bool caseSensitive = true}) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Matches,
-      property: 'url',
-      value: pattern,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Matches,
+      3,
+      'String',
+      lower: pattern,
       caseSensitive: caseSensitive,
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> rateGreaterThan(double value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Gt,
-      property: 'rate',
-      value: value,
+  QueryBuilder<Manga, QAfterFilterCondition> rateGreaterThan(double value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Gt,
+      4,
+      'Double',
+      lower: value,
+      includeLower: include,
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> rateLessThan(double value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Lt,
-      property: 'rate',
-      value: value,
+  QueryBuilder<Manga, QAfterFilterCondition> rateLessThan(double value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Lt,
+      4,
+      'Double',
+      upper: value,
+      includeUpper: include,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> rateBetween(
-      double lower, double upper) {
-    return addFilterCondition(FilterCondition.between(
-      property: 'rate',
+      double lower, double upper,
+      {bool includeLower = true, bool includeUpper = true}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Between,
+      4,
+      'Double',
       lower: lower,
+      includeLower: includeLower,
       upper: upper,
+      includeUpper: includeUpper,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> viewsCountEqualTo(int value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Eq,
-      property: 'viewsCount',
-      value: value,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Eq,
+      5,
+      'Long',
+      lower: value,
+      upper: value,
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> viewsCountGreaterThan(int value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Gt,
-      property: 'viewsCount',
-      value: value,
+  QueryBuilder<Manga, QAfterFilterCondition> viewsCountIn(List<int> values) {
+    return group((q) {
+      for (var i = 0; i < values.length; i++) {
+        if (i == values.length - 1) {
+          return q.viewsCountEqualTo(values[i]);
+        } else {
+          q = q.viewsCountEqualTo(values[i]).or();
+        }
+      }
+      throw 'Empty values is unsupported.';
+    });
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> viewsCountGreaterThan(int value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Gt,
+      5,
+      'Long',
+      lower: value,
+      includeLower: include,
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> viewsCountLessThan(int value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Lt,
-      property: 'viewsCount',
-      value: value,
+  QueryBuilder<Manga, QAfterFilterCondition> viewsCountLessThan(int value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Lt,
+      5,
+      'Long',
+      upper: value,
+      includeUpper: include,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> viewsCountBetween(
-      int lower, int upper) {
-    return addFilterCondition(FilterCondition.between(
-      property: 'viewsCount',
+      int lower, int upper,
+      {bool includeLower = true, bool includeUpper = true}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Between,
+      5,
+      'Long',
       lower: lower,
+      includeLower: includeLower,
       upper: upper,
+      includeUpper: includeUpper,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> lastChapterUrlEqualTo(String value,
       {bool caseSensitive = true}) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Eq,
-      property: 'lastChapterUrl',
-      value: value,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Eq,
+      6,
+      'String',
+      lower: value,
+      upper: value,
       caseSensitive: caseSensitive,
     ));
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> lastChapterUrlIn(
+      List<String> values,
+      {bool caseSensitive = true}) {
+    return group((q) {
+      for (var i = 0; i < values.length; i++) {
+        if (i == values.length - 1) {
+          return q.lastChapterUrlEqualTo(values[i],
+              caseSensitive: caseSensitive);
+        } else {
+          q = q
+              .lastChapterUrlEqualTo(values[i], caseSensitive: caseSensitive)
+              .or();
+        }
+      }
+      throw 'Empty values is unsupported.';
+    });
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> lastChapterUrlStartsWith(
       String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.StartsWith,
-      property: 'lastChapterUrl',
-      value: convertedValue,
+    return addFilterCondition(QueryCondition(
+      ConditionType.StartsWith,
+      6,
+      'String',
+      lower: convertedValue,
       caseSensitive: caseSensitive,
     ));
   }
@@ -600,10 +814,11 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
       String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.EndsWith,
-      property: 'lastChapterUrl',
-      value: convertedValue,
+    return addFilterCondition(QueryCondition(
+      ConditionType.EndsWith,
+      6,
+      'String',
+      lower: convertedValue,
       caseSensitive: caseSensitive,
     ));
   }
@@ -612,10 +827,11 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
       String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Matches,
-      property: 'lastChapterUrl',
-      value: '*$convertedValue*',
+    return addFilterCondition(QueryCondition(
+      ConditionType.Contains,
+      6,
+      'String',
+      lower: convertedValue,
       caseSensitive: caseSensitive,
     ));
   }
@@ -623,10 +839,11 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
   QueryBuilder<Manga, QAfterFilterCondition> lastChapterUrlMatches(
       String pattern,
       {bool caseSensitive = true}) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Matches,
-      property: 'lastChapterUrl',
-      value: pattern,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Matches,
+      6,
+      'String',
+      lower: pattern,
       caseSensitive: caseSensitive,
     ));
   }
@@ -634,22 +851,43 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
   QueryBuilder<Manga, QAfterFilterCondition> currentChapterUrlEqualTo(
       String value,
       {bool caseSensitive = true}) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Eq,
-      property: 'currentChapterUrl',
-      value: value,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Eq,
+      7,
+      'String',
+      lower: value,
+      upper: value,
       caseSensitive: caseSensitive,
     ));
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> currentChapterUrlIn(
+      List<String> values,
+      {bool caseSensitive = true}) {
+    return group((q) {
+      for (var i = 0; i < values.length; i++) {
+        if (i == values.length - 1) {
+          return q.currentChapterUrlEqualTo(values[i],
+              caseSensitive: caseSensitive);
+        } else {
+          q = q
+              .currentChapterUrlEqualTo(values[i], caseSensitive: caseSensitive)
+              .or();
+        }
+      }
+      throw 'Empty values is unsupported.';
+    });
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> currentChapterUrlStartsWith(
       String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.StartsWith,
-      property: 'currentChapterUrl',
-      value: convertedValue,
+    return addFilterCondition(QueryCondition(
+      ConditionType.StartsWith,
+      7,
+      'String',
+      lower: convertedValue,
       caseSensitive: caseSensitive,
     ));
   }
@@ -658,10 +896,11 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
       String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.EndsWith,
-      property: 'currentChapterUrl',
-      value: convertedValue,
+    return addFilterCondition(QueryCondition(
+      ConditionType.EndsWith,
+      7,
+      'String',
+      lower: convertedValue,
       caseSensitive: caseSensitive,
     ));
   }
@@ -670,10 +909,11 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
       String value,
       {bool caseSensitive = true}) {
     final convertedValue = value;
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Matches,
-      property: 'currentChapterUrl',
-      value: '*$convertedValue*',
+    return addFilterCondition(QueryCondition(
+      ConditionType.Contains,
+      7,
+      'String',
+      lower: convertedValue,
       caseSensitive: caseSensitive,
     ));
   }
@@ -681,498 +921,392 @@ extension MangaQueryFilter on QueryBuilder<Manga, QFilterCondition> {
   QueryBuilder<Manga, QAfterFilterCondition> currentChapterUrlMatches(
       String pattern,
       {bool caseSensitive = true}) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Matches,
-      property: 'currentChapterUrl',
-      value: pattern,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Matches,
+      7,
+      'String',
+      lower: pattern,
       caseSensitive: caseSensitive,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> readCountEqualTo(int value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Eq,
-      property: 'readCount',
-      value: value,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Eq,
+      8,
+      'Long',
+      lower: value,
+      upper: value,
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> readCountGreaterThan(int value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Gt,
-      property: 'readCount',
-      value: value,
+  QueryBuilder<Manga, QAfterFilterCondition> readCountIn(List<int> values) {
+    return group((q) {
+      for (var i = 0; i < values.length; i++) {
+        if (i == values.length - 1) {
+          return q.readCountEqualTo(values[i]);
+        } else {
+          q = q.readCountEqualTo(values[i]).or();
+        }
+      }
+      throw 'Empty values is unsupported.';
+    });
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> readCountGreaterThan(int value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Gt,
+      8,
+      'Long',
+      lower: value,
+      includeLower: include,
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> readCountLessThan(int value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Lt,
-      property: 'readCount',
-      value: value,
+  QueryBuilder<Manga, QAfterFilterCondition> readCountLessThan(int value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Lt,
+      8,
+      'Long',
+      upper: value,
+      includeUpper: include,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> readCountBetween(
-      int lower, int upper) {
-    return addFilterCondition(FilterCondition.between(
-      property: 'readCount',
+      int lower, int upper,
+      {bool includeLower = true, bool includeUpper = true}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Between,
+      8,
+      'Long',
       lower: lower,
+      includeLower: includeLower,
       upper: upper,
+      includeUpper: includeUpper,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> createdAtEqualTo(DateTime value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Eq,
-      property: 'createdAt',
-      value: value,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Eq,
+      9,
+      'DateTime',
+      lower: value,
+      upper: value,
     ));
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> createdAtIn(
+      List<DateTime> values) {
+    return group((q) {
+      for (var i = 0; i < values.length; i++) {
+        if (i == values.length - 1) {
+          return q.createdAtEqualTo(values[i]);
+        } else {
+          q = q.createdAtEqualTo(values[i]).or();
+        }
+      }
+      throw 'Empty values is unsupported.';
+    });
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> createdAtGreaterThan(
-      DateTime value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Gt,
-      property: 'createdAt',
-      value: value,
+      DateTime value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Gt,
+      9,
+      'DateTime',
+      lower: value,
+      includeLower: include,
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> createdAtLessThan(DateTime value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Lt,
-      property: 'createdAt',
-      value: value,
+  QueryBuilder<Manga, QAfterFilterCondition> createdAtLessThan(DateTime value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Lt,
+      9,
+      'DateTime',
+      upper: value,
+      includeUpper: include,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> createdAtBetween(
-      DateTime lower, DateTime upper) {
-    return addFilterCondition(FilterCondition.between(
-      property: 'createdAt',
+      DateTime lower, DateTime upper,
+      {bool includeLower = true, bool includeUpper = true}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Between,
+      9,
+      'DateTime',
       lower: lower,
+      includeLower: includeLower,
       upper: upper,
+      includeUpper: includeUpper,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> updatedAtEqualTo(DateTime value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Eq,
-      property: 'updatedAt',
-      value: value,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Eq,
+      10,
+      'DateTime',
+      lower: value,
+      upper: value,
     ));
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> updatedAtIn(
+      List<DateTime> values) {
+    return group((q) {
+      for (var i = 0; i < values.length; i++) {
+        if (i == values.length - 1) {
+          return q.updatedAtEqualTo(values[i]);
+        } else {
+          q = q.updatedAtEqualTo(values[i]).or();
+        }
+      }
+      throw 'Empty values is unsupported.';
+    });
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> updatedAtGreaterThan(
-      DateTime value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Gt,
-      property: 'updatedAt',
-      value: value,
+      DateTime value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Gt,
+      10,
+      'DateTime',
+      lower: value,
+      includeLower: include,
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> updatedAtLessThan(DateTime value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Lt,
-      property: 'updatedAt',
-      value: value,
+  QueryBuilder<Manga, QAfterFilterCondition> updatedAtLessThan(DateTime value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Lt,
+      10,
+      'DateTime',
+      upper: value,
+      includeUpper: include,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> updatedAtBetween(
-      DateTime lower, DateTime upper) {
-    return addFilterCondition(FilterCondition.between(
-      property: 'updatedAt',
+      DateTime lower, DateTime upper,
+      {bool includeLower = true, bool includeUpper = true}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Between,
+      10,
+      'DateTime',
       lower: lower,
+      includeLower: includeLower,
       upper: upper,
+      includeUpper: includeUpper,
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> orderGreaterThan(double value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Gt,
-      property: 'order',
-      value: value,
+  QueryBuilder<Manga, QAfterFilterCondition> orderGreaterThan(double value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Gt,
+      11,
+      'Double',
+      lower: value,
+      includeLower: include,
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> orderLessThan(double value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Lt,
-      property: 'order',
-      value: value,
+  QueryBuilder<Manga, QAfterFilterCondition> orderLessThan(double value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Lt,
+      11,
+      'Double',
+      upper: value,
+      includeUpper: include,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> orderBetween(
-      double lower, double upper) {
-    return addFilterCondition(FilterCondition.between(
-      property: 'order',
+      double lower, double upper,
+      {bool includeLower = true, bool includeUpper = true}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Between,
+      11,
+      'Double',
       lower: lower,
+      includeLower: includeLower,
       upper: upper,
+      includeUpper: includeUpper,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> currentScrollYEqualTo(int value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Eq,
-      property: 'currentScrollY',
-      value: value,
+    return addFilterCondition(QueryCondition(
+      ConditionType.Eq,
+      12,
+      'Long',
+      lower: value,
+      upper: value,
     ));
+  }
+
+  QueryBuilder<Manga, QAfterFilterCondition> currentScrollYIn(
+      List<int> values) {
+    return group((q) {
+      for (var i = 0; i < values.length; i++) {
+        if (i == values.length - 1) {
+          return q.currentScrollYEqualTo(values[i]);
+        } else {
+          q = q.currentScrollYEqualTo(values[i]).or();
+        }
+      }
+      throw 'Empty values is unsupported.';
+    });
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> currentScrollYGreaterThan(
-      int value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Gt,
-      property: 'currentScrollY',
-      value: value,
+      int value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Gt,
+      12,
+      'Long',
+      lower: value,
+      includeLower: include,
     ));
   }
 
-  QueryBuilder<Manga, QAfterFilterCondition> currentScrollYLessThan(int value) {
-    return addFilterCondition(FilterCondition(
-      type: ConditionType.Lt,
-      property: 'currentScrollY',
-      value: value,
+  QueryBuilder<Manga, QAfterFilterCondition> currentScrollYLessThan(int value,
+      {bool include = false}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Lt,
+      12,
+      'Long',
+      upper: value,
+      includeUpper: include,
     ));
   }
 
   QueryBuilder<Manga, QAfterFilterCondition> currentScrollYBetween(
-      int lower, int upper) {
-    return addFilterCondition(FilterCondition.between(
-      property: 'currentScrollY',
+      int lower, int upper,
+      {bool includeLower = true, bool includeUpper = true}) {
+    return addFilterCondition(QueryCondition(
+      ConditionType.Between,
+      12,
+      'Long',
       lower: lower,
+      includeLower: includeLower,
       upper: upper,
+      includeUpper: includeUpper,
     ));
   }
 }
 
 extension MangaQueryLinks on QueryBuilder<Manga, QFilterCondition> {}
 
-extension MangaQueryWhereSortBy on QueryBuilder<Manga, QSortBy> {
-  QueryBuilder<Manga, QAfterSortBy> sortById() {
-    return addSortByInternal('id', Sort.Asc);
-  }
+extension MangaQueryWhereSortBy on QueryBuilder<Manga, QSortBy> {}
 
-  QueryBuilder<Manga, QAfterSortBy> sortByIdDesc() {
-    return addSortByInternal('id', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByTitle() {
-    return addSortByInternal('title', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByTitleDesc() {
-    return addSortByInternal('title', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByCoverImageUrl() {
-    return addSortByInternal('coverImageUrl', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByCoverImageUrlDesc() {
-    return addSortByInternal('coverImageUrl', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByUrl() {
-    return addSortByInternal('url', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByUrlDesc() {
-    return addSortByInternal('url', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByRate() {
-    return addSortByInternal('rate', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByRateDesc() {
-    return addSortByInternal('rate', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByViewsCount() {
-    return addSortByInternal('viewsCount', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByViewsCountDesc() {
-    return addSortByInternal('viewsCount', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByLastChapterUrl() {
-    return addSortByInternal('lastChapterUrl', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByLastChapterUrlDesc() {
-    return addSortByInternal('lastChapterUrl', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByCurrentChapterUrl() {
-    return addSortByInternal('currentChapterUrl', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByCurrentChapterUrlDesc() {
-    return addSortByInternal('currentChapterUrl', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByReadCount() {
-    return addSortByInternal('readCount', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByReadCountDesc() {
-    return addSortByInternal('readCount', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByCreatedAt() {
-    return addSortByInternal('createdAt', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByCreatedAtDesc() {
-    return addSortByInternal('createdAt', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByUpdatedAt() {
-    return addSortByInternal('updatedAt', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByUpdatedAtDesc() {
-    return addSortByInternal('updatedAt', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByOrder() {
-    return addSortByInternal('order', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByOrderDesc() {
-    return addSortByInternal('order', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByCurrentScrollY() {
-    return addSortByInternal('currentScrollY', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> sortByCurrentScrollYDesc() {
-    return addSortByInternal('currentScrollY', Sort.Desc);
-  }
-}
-
-extension MangaQueryWhereSortThenBy on QueryBuilder<Manga, QSortThenBy> {
-  QueryBuilder<Manga, QAfterSortBy> thenById() {
-    return addSortByInternal('id', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByIdDesc() {
-    return addSortByInternal('id', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByTitle() {
-    return addSortByInternal('title', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByTitleDesc() {
-    return addSortByInternal('title', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByCoverImageUrl() {
-    return addSortByInternal('coverImageUrl', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByCoverImageUrlDesc() {
-    return addSortByInternal('coverImageUrl', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByUrl() {
-    return addSortByInternal('url', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByUrlDesc() {
-    return addSortByInternal('url', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByRate() {
-    return addSortByInternal('rate', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByRateDesc() {
-    return addSortByInternal('rate', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByViewsCount() {
-    return addSortByInternal('viewsCount', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByViewsCountDesc() {
-    return addSortByInternal('viewsCount', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByLastChapterUrl() {
-    return addSortByInternal('lastChapterUrl', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByLastChapterUrlDesc() {
-    return addSortByInternal('lastChapterUrl', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByCurrentChapterUrl() {
-    return addSortByInternal('currentChapterUrl', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByCurrentChapterUrlDesc() {
-    return addSortByInternal('currentChapterUrl', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByReadCount() {
-    return addSortByInternal('readCount', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByReadCountDesc() {
-    return addSortByInternal('readCount', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByCreatedAt() {
-    return addSortByInternal('createdAt', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByCreatedAtDesc() {
-    return addSortByInternal('createdAt', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByUpdatedAt() {
-    return addSortByInternal('updatedAt', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByUpdatedAtDesc() {
-    return addSortByInternal('updatedAt', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByOrder() {
-    return addSortByInternal('order', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByOrderDesc() {
-    return addSortByInternal('order', Sort.Desc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByCurrentScrollY() {
-    return addSortByInternal('currentScrollY', Sort.Asc);
-  }
-
-  QueryBuilder<Manga, QAfterSortBy> thenByCurrentScrollYDesc() {
-    return addSortByInternal('currentScrollY', Sort.Desc);
-  }
-}
+extension MangaQueryWhereSortThenBy on QueryBuilder<Manga, QSortThenBy> {}
 
 extension MangaQueryWhereDistinct on QueryBuilder<Manga, QDistinct> {
   QueryBuilder<Manga, QDistinct> distinctById() {
-    return addDistinctByInternal('id');
+    return addDistinctByInternal(0);
   }
 
-  QueryBuilder<Manga, QDistinct> distinctByTitle({bool caseSensitive = true}) {
-    return addDistinctByInternal('title', caseSensitive: caseSensitive);
+  QueryBuilder<Manga, QDistinct> distinctByTitle() {
+    return addDistinctByInternal(1);
   }
 
-  QueryBuilder<Manga, QDistinct> distinctByCoverImageUrl(
-      {bool caseSensitive = true}) {
-    return addDistinctByInternal('coverImageUrl', caseSensitive: caseSensitive);
+  QueryBuilder<Manga, QDistinct> distinctByCoverImageUrl() {
+    return addDistinctByInternal(2);
   }
 
-  QueryBuilder<Manga, QDistinct> distinctByUrl({bool caseSensitive = true}) {
-    return addDistinctByInternal('url', caseSensitive: caseSensitive);
+  QueryBuilder<Manga, QDistinct> distinctByUrl() {
+    return addDistinctByInternal(3);
   }
 
   QueryBuilder<Manga, QDistinct> distinctByRate() {
-    return addDistinctByInternal('rate');
+    return addDistinctByInternal(4);
   }
 
   QueryBuilder<Manga, QDistinct> distinctByViewsCount() {
-    return addDistinctByInternal('viewsCount');
+    return addDistinctByInternal(5);
   }
 
-  QueryBuilder<Manga, QDistinct> distinctByLastChapterUrl(
-      {bool caseSensitive = true}) {
-    return addDistinctByInternal('lastChapterUrl',
-        caseSensitive: caseSensitive);
+  QueryBuilder<Manga, QDistinct> distinctByLastChapterUrl() {
+    return addDistinctByInternal(6);
   }
 
-  QueryBuilder<Manga, QDistinct> distinctByCurrentChapterUrl(
-      {bool caseSensitive = true}) {
-    return addDistinctByInternal('currentChapterUrl',
-        caseSensitive: caseSensitive);
+  QueryBuilder<Manga, QDistinct> distinctByCurrentChapterUrl() {
+    return addDistinctByInternal(7);
   }
 
   QueryBuilder<Manga, QDistinct> distinctByReadCount() {
-    return addDistinctByInternal('readCount');
+    return addDistinctByInternal(8);
   }
 
   QueryBuilder<Manga, QDistinct> distinctByCreatedAt() {
-    return addDistinctByInternal('createdAt');
+    return addDistinctByInternal(9);
   }
 
   QueryBuilder<Manga, QDistinct> distinctByUpdatedAt() {
-    return addDistinctByInternal('updatedAt');
+    return addDistinctByInternal(10);
   }
 
   QueryBuilder<Manga, QDistinct> distinctByOrder() {
-    return addDistinctByInternal('order');
+    return addDistinctByInternal(11);
   }
 
   QueryBuilder<Manga, QDistinct> distinctByCurrentScrollY() {
-    return addDistinctByInternal('currentScrollY');
+    return addDistinctByInternal(12);
   }
 }
 
-extension MangaQueryProperty on QueryBuilder<Manga, QQueryProperty> {
-  QueryBuilder<int?, QQueryOperations> idProperty() {
-    return addPropertyName('id');
+class _GeneratedIsarInterface implements IsarInterface {
+  @override
+  String get schemaJson => _schema;
+
+  @override
+  List<String> get instanceNames => _isar.keys.toList();
+
+  @override
+  IsarCollection getCollection(String instanceName, String collectionName) {
+    final instance = _isar[instanceName];
+    if (instance == null) throw 'Isar instance $instanceName is not open';
+    switch (collectionName) {
+      case 'Manga':
+        return _mangaCollection[instanceName]!;
+      default:
+        throw 'Unknown collection';
+    }
   }
 
-  QueryBuilder<String, QQueryOperations> titleProperty() {
-    return addPropertyName('title');
-  }
-
-  QueryBuilder<String, QQueryOperations> coverImageUrlProperty() {
-    return addPropertyName('coverImageUrl');
-  }
-
-  QueryBuilder<String, QQueryOperations> urlProperty() {
-    return addPropertyName('url');
-  }
-
-  QueryBuilder<double, QQueryOperations> rateProperty() {
-    return addPropertyName('rate');
-  }
-
-  QueryBuilder<int, QQueryOperations> viewsCountProperty() {
-    return addPropertyName('viewsCount');
-  }
-
-  QueryBuilder<String, QQueryOperations> lastChapterUrlProperty() {
-    return addPropertyName('lastChapterUrl');
-  }
-
-  QueryBuilder<String, QQueryOperations> currentChapterUrlProperty() {
-    return addPropertyName('currentChapterUrl');
-  }
-
-  QueryBuilder<int, QQueryOperations> readCountProperty() {
-    return addPropertyName('readCount');
-  }
-
-  QueryBuilder<DateTime, QQueryOperations> createdAtProperty() {
-    return addPropertyName('createdAt');
-  }
-
-  QueryBuilder<DateTime, QQueryOperations> updatedAtProperty() {
-    return addPropertyName('updatedAt');
-  }
-
-  QueryBuilder<double, QQueryOperations> orderProperty() {
-    return addPropertyName('order');
-  }
-
-  QueryBuilder<int, QQueryOperations> currentScrollYProperty() {
-    return addPropertyName('currentScrollY');
+  @override
+  Map<String, dynamic> objectToJson(dynamic object) {
+    if (object is Manga) {
+      return {
+        'id': object.id,
+        'title': object.title,
+        'coverImageUrl': object.coverImageUrl,
+        'url': object.url,
+        'rate': object.rate,
+        'viewsCount': object.viewsCount,
+        'lastChapterUrl': object.lastChapterUrl,
+        'currentChapterUrl': object.currentChapterUrl,
+        'readCount': object.readCount,
+        'createdAt': object.createdAt,
+        'updatedAt': object.updatedAt,
+        'order': object.order,
+        'currentScrollY': object.currentScrollY,
+      };
+    }
+    throw 'Unknown object type';
   }
 }

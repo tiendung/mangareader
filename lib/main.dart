@@ -39,7 +39,7 @@ class MyHomePage extends ConsumerWidget {
     MangaHelpers.groupMangasByUpdatedAt(mangas, map);
 
     void _floatButtonPressed() async {
-      await context.read(mangasProvider.notifier).load();
+      await context.read(mangasProvider.notifier).update();
       final snackBar = SnackBar(
         content: Text('${mangas.length} mangas loaded'),
         action: SnackBarAction(
