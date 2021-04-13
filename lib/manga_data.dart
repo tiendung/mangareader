@@ -1,19 +1,20 @@
 import 'dart:collection';
-import 'dart:io' show Platform;
 import 'manga_isar.dart';
 
 extension MangaConstants on Manga {
-  static const TRACK_URL = 'https://manganelo.com/manga/tm923455';
+  static const MAX_PAGE = 65; // Platform.isAndroid ? 65 : 5;
   static const MIN_RATE = 4.6;
+  static const MIN_VIEWS = 300000;
+
+  static const TOP_MAX_PAGE = 23;
   static const TOP_MIN_RATE = 4.8;
-  static const MAX_RATE = 5.0;
-  static const MIN_VIEWS = 500000;
-  static const TOP_MIN_VIEWS = 10000000;
+  static const TOP_MIN_VIEWS = 8000000;
+
   static const MAX_UPDATED_DAYS = 30;
   static const MIN_READ_COUNT = 2;
-  // ignore: non_constant_identifier_names
-  static final MAX_PAGE = Platform.isAndroid ? 65 : 5;
-  static const TOP_MAX_PAGE = 23;
+  static const MAX_RATE = 5.0;
+
+  static const TRACK_URL = 'https://manganelo.com/manga/tm923455';
 }
 
 extension MangaMethods on Manga {

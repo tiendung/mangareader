@@ -22,7 +22,6 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
     for (var i = 1; i <= MangaConstants.TOP_MAX_PAGE; i++) {
       await crawl(
           'https://manganelo.com/advanced_search?s=all&orby=topview&page=$i',
-          // 'https://manganelo.com/advanced_search?s=all&sts=completed&orby=topview&page=$i',
           false);
     }
     await load();
