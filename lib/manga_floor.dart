@@ -60,7 +60,7 @@ abstract class MangaDao {
   @Query('SELECT * FROM Manga')
   Future<List<Manga>> loadAll();
 
-  @Query('SELECT * FROM Manga WHERE url = :url LIMIT 1')
+  @Query('SELECT * FROM Manga WHERE url = :url')
   Future<Manga?> findByUrl(String url);
 
   @insert

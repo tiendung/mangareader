@@ -4,10 +4,12 @@ import 'dart:io';
 import 'manga_floor.dart';
 
 extension MangaConstants on Manga {
+  // ignore: non_constant_identifier_names
   static final MAX_PAGE = Platform.isAndroid ? 65 : 5;
   static const MIN_RATE = 4.6;
   static const MIN_VIEWS = 300000;
 
+  // ignore: non_constant_identifier_names
   static final TOP_MAX_PAGE = Platform.isAndroid ? 23 : 5;
   static const TOP_MIN_RATE = 4.8;
   static const TOP_MIN_VIEWS = 8000000;
