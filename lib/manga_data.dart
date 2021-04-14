@@ -1,5 +1,6 @@
 import 'dart:collection';
-import 'manga_isar.dart';
+// import 'manga_isar.dart';
+import 'manga_floor.dart';
 
 extension MangaConstants on Manga {
   static const MAX_PAGE = 65; // Platform.isAndroid ? 65 : 5;
@@ -40,18 +41,18 @@ extension MangaMethods on Manga {
   }
 
   String toStr() {
-    return 'Manga(#$id, $url, $rate, $updatedAt, $viewsCount, $order)\n';
+    return 'Manga(#$url, $rate, $updatedAt, $viewsCount)\n';
   }
 
   void updateCurrentReading(String chapterUrl) async {
     currentChapterUrl = chapterUrl;
     readCount++;
-    save();
+    save(isNew: false);
   }
 
   updateCurrentScrollY(String scrollY) {
     currentScrollY = double.parse(scrollY).floor();
-    save();
+    save(isNew: false);
   }
 }
 

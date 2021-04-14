@@ -32,7 +32,7 @@ class Manga {
 
   int currentScrollY = 0;
 
-  void save() async {
+  void save({bool isNew = true}) {
     Manga.saveAll([this]);
   }
 

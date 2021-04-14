@@ -2,8 +2,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 import 'chapter_screen_js.dart' as ChapterScreenJs;
-import 'manga_isar.dart';
 import 'manga_data.dart';
+// import 'manga_isar.dart';
+import 'manga_floor.dart';
 
 class ChapterScreen extends StatefulWidget {
   final Manga manga;
@@ -48,6 +49,9 @@ class ChapterScreenState extends State<ChapterScreen> {
               onMessageReceived: (m) {
                 print('\n- - - -\nReading: ${m.message}');
                 widget.manga.updateCurrentReading(m.message);
+                // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                //   duration: const Duration(seconds: 2),
+                //   content: Text('Reading '+ m.message.split('/').last)));
               }),
           JavascriptChannel(
               name: 'HideUnwantedElems',
@@ -74,7 +78,8 @@ class ChapterScreenState extends State<ChapterScreen> {
           if (jsRun > 0) return;
           _controller!.evaluateJavascript(
               ChapterScreenJs.hideUnwantedElemsJsAndScroll(
-                  widget.manga.currentScrollY));
+                widget.chapterUrl == widget.manga.currentChapterUrl ?
+                  widget.manga.currentScrollY : 0));
         },
       ),
       floatingActionButtonLocation: FloatingActionButtonLocation.miniStartFloat,

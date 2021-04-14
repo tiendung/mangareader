@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
-import 'manga_isar.dart';
-import 'manga_data.dart';
 import 'chapter_screen.dart';
+
+import 'manga_data.dart';
+// import 'manga_isar.dart';
+import 'manga_floor.dart';
 
 class MangaScreen extends StatelessWidget {
   final Manga manga;

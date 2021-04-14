@@ -4,7 +4,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:dio/dio.dart';
 import 'package:intl/intl.dart';
 import 'manga_data.dart';
-import 'manga_isar.dart';
+// import 'manga_isar.dart';
+import 'manga_floor.dart';
 
 final mangasProvider =
     StateNotifierProvider<MangasNotifier, SplayTreeSet<Manga>>(

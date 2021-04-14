@@ -39,7 +39,7 @@ EXTERNAL SOURCES:
 SPEC CHECKSUMS:
   Flutter: 434fef37c0980e73bb6479ef766c45957d4b510c
   FMDB: 2ce00b547f966261cd18927a3ddb07cb6f3db82a
-  isar_flutter_libs: 67eeff84b73aba6de9b50371f67c86cc53e4ee9e
+  isar_flutter_libs: 53cd72e1db153c1341e9dc2d9694b52dcbdd24c1
   path_provider: abfe2b5c733d04e238b0d8691db0cfd63a27a93c
   sqflite: 6d358c025f5b867b29ed92fc697fd34924e11904
   webview_flutter: 9f491a9b5a66f2573946a389b2677987b0ff8c0b

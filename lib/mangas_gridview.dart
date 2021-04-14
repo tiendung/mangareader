@@ -2,9 +2,11 @@ import 'dart:collection';
 
 import 'package:flutter/material.dart';
 import 'chapter_screen.dart';
-import 'manga_isar.dart';
-import 'manga_data.dart';
 import 'manga_item.dart';
+
+import 'manga_data.dart';
+// import 'manga_isar.dart';
+import 'manga_floor.dart';
 
 class MangasGridView extends StatelessWidget {
   final SplayTreeSet<Manga> mangas;

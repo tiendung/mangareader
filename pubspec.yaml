@@ -29,7 +29,8 @@ dependencies:
   cached_network_image: ^3.0.0
   webview_flutter: ^2.0.3
   flutter_riverpod: ^0.14.0
-
+  
+  floor: ^1.0.1
   isar: 0.2.0
   isar_flutter_libs: 0.2.0
 
@@ -37,7 +38,8 @@ dependencies:
   # Use with the CupertinoIcons class for iOS style icons.
   cupertino_icons: ^1.0.2
   flutter_launcher_icons: ^0.9.0
-  moor_flutter: ^4.0.0
+  # moor_flutter: ^4.0.0
+  # moor: ^4.2.0
 
 flutter_icons:
   android: "launcher_icon"
@@ -48,8 +50,10 @@ flutter_icons:
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  isar_generator: 0.2.0
-  build_runner: any
+  # isar_generator: 0.2.0
+  floor_generator: ^1.0.1
+  # moor_generator: ^4.2.1
+  build_runner: ^1.12.2
   
 # For information on the generic Dart part of this file, see the
 # following page: https://dart.dev/tools/pub/pubspec
