@@ -3,13 +3,12 @@ import 'dart:collection';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:sticky_headers/sticky_headers.dart';
-import 'mangas_provider.dart';
-import 'mangas_gridview.dart';
-import 'constants.dart';
 
-import 'manga_data.dart';
-// import 'manga_isar.dart';
-import 'manga_floor.dart';
+import 'package:mangareader/constants.dart';
+import 'package:mangareader/widgets/mangas_gridview.dart';
+import 'package:mangareader/data/mangas_provider.dart';
+import 'package:mangareader/data/manga_data.dart';
+import 'package:mangareader/data/manga_floor.dart';
 
 void main() {
   runApp(ProviderScope(

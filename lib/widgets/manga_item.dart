@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'constants.dart';
-import 'manga_data.dart';
-// import 'manga_isar.dart';
-import 'manga_floor.dart';
+
+import 'package:mangareader/constants.dart';
+import 'package:mangareader/data/manga_data.dart';
+import 'package:mangareader/data/manga_floor.dart';
 
 class MangaItem extends StatelessWidget {
   final Manga manga;
