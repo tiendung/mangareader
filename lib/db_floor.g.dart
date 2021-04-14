@@ -142,13 +142,36 @@ class _$MangaDao extends MangaDao {
   @override
   Future<List<Manga>> loadAll() async {
     return _queryAdapter.queryList('SELECT * FROM Manga',
-        mapper: (Map<String, Object?> row) => Manga());
+        mapper: (Map<String, Object?> row) => Manga(
+            row['url'] as String,
+            row['title'] as String,
+            row['coverImageUrl'] as String,
+            row['rate'] as double,
+            row['viewsCount'] as int,
+            row['lastChapterUrl'] as String,
+            row['currentChapterUrl'] as String,
+            row['currentScrollY'] as int,
+            row['readCount'] as int,
+            _dateTimeConverter.decode(row['createdAt'] as int),
+            _dateTimeConverter.decode(row['updatedAt'] as int)));
   }
 
   @override
   Future<Manga?> findByUrl(String url) async {
     return _queryAdapter.query('SELECT * FROM Manga WHERE url = ?1 LIMIT 1',
-        mapper: (Map<String, Object?> row) => Manga(), arguments: [url]);
+        mapper: (Map<String, Object?> row) => Manga(
+            row['url'] as String,
+            row['title'] as String,
+            row['coverImageUrl'] as String,
+            row['rate'] as double,
+            row['viewsCount'] as int,
+            row['lastChapterUrl'] as String,
+            row['currentChapterUrl'] as String,
+            row['currentScrollY'] as int,
+            row['readCount'] as int,
+            _dateTimeConverter.decode(row['createdAt'] as int),
+            _dateTimeConverter.decode(row['updatedAt'] as int)),
+        arguments: [url]);
   }
 
   @override

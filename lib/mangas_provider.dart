@@ -66,7 +66,7 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
 
       final found = await Manga.findByUrl(url);
       final isNewManga = found == null;
-      final manga = isNewManga ? Manga() : found!;
+      final manga = isNewManga ? Manga.newManga() : found!;
       // var isNewManga = false;
       // final manga = state.firstWhere((x) => x.url == url, orElse: () {
       //   isNewManga = true;
@@ -114,8 +114,10 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
   Future<void> load() async {
     final sortedMangas =
         SplayTreeSet<Manga>(MangaHelpers.sortByUpdatedDateDesc);
-    for (var manga in await Manga.loadAll())
+    for (var manga in await Manga.loadAll()) {
       if (manga.rate >= MangaConstants.MIN_RATE) sortedMangas.add(manga);
+      print('\n- - - - - - - - - -\n${manga.toStr()}\n\n');
+    }
     state = sortedMangas;
   }
 }

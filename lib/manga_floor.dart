@@ -4,21 +4,39 @@ import 'db_floor.dart';
 @entity
 class Manga {
   @primaryKey
-  String url = "";
+  String url;
 
-  String title = "";
-  String coverImageUrl = "";
+  String title;
+  String coverImageUrl;
 
-  double rate = 0;
-  int viewsCount = 0;
+  double rate;
+  int viewsCount;
 
-  String lastChapterUrl = "";
-  String currentChapterUrl = "";
-  int currentScrollY = 0;
-  int readCount = 0;
+  String lastChapterUrl;
+  String currentChapterUrl;
+  int currentScrollY;
+  int readCount;
 
-  DateTime createdAt = DateTime.now();
-  DateTime updatedAt = DateTime.now();
+  DateTime createdAt;
+  DateTime updatedAt;
+
+  Manga(
+      this.url,
+      this.title,
+      this.coverImageUrl,
+      this.rate,
+      this.viewsCount,
+      this.lastChapterUrl,
+      this.currentChapterUrl,
+      this.currentScrollY,
+      this.readCount,
+      this.createdAt,
+      this.updatedAt);
+
+  static Manga newManga() {
+    return Manga(
+        "", "", "", 0, 0, "", "", 0, 0, DateTime.now(), DateTime.now());
+  }
 
   void save({bool isNew = true}) async {
     final mangaDao = (await Db.get()).mangaDao;

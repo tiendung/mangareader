@@ -1,13 +1,14 @@
 import 'dart:collection';
+import 'dart:io';
 // import 'manga_isar.dart';
 import 'manga_floor.dart';
 
 extension MangaConstants on Manga {
-  static const MAX_PAGE = 65; // Platform.isAndroid ? 65 : 5;
+  static final MAX_PAGE = Platform.isAndroid ? 65 : 5;
   static const MIN_RATE = 4.6;
   static const MIN_VIEWS = 300000;
 
-  static const TOP_MAX_PAGE = 23;
+  static final TOP_MAX_PAGE = Platform.isAndroid ? 23 : 5;
   static const TOP_MIN_RATE = 4.8;
   static const TOP_MIN_VIEWS = 8000000;
 
@@ -119,8 +120,8 @@ extension MangaHelpers on Manga {
               .add(manga);
         }
       }
-      // if (manga.url == MangaConstants.TRACK_URL)
-      //   print('\n- - -\nFOUND @ groupMangasByUpdatedAt: ${manga.toStr()}\n');
+      if (manga.url == MangaConstants.TRACK_URL)
+        print('\n- - -\nFOUND @ groupMangasByUpdatedAt: ${manga.toStr()}\n');
     }
   }
 }
