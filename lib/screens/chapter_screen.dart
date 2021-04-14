@@ -6,7 +6,7 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:mangareader/data/manga_data.dart';
 import 'package:mangareader/data/manga_floor.dart';
 
-import 'chapter_screen_js.dart' as ChapterScreenJs;
+import 'package:mangareader/screens/chapter_screen_js.dart' as JavaScript;
 
 class ChapterScreen extends StatefulWidget {
   final Manga manga;
@@ -43,30 +43,25 @@ class ChapterScreenState extends State<ChapterScreen> {
           JavascriptChannel(
               name: 'UpdateCurrentScrollY',
               onMessageReceived: (m) {
-                print('\n- - - -\nScrollY: ${m.message}');
                 widget.manga.updateCurrentScrollY(m.message);
               }),
           JavascriptChannel(
               name: 'UpdateCurrentReading',
               onMessageReceived: (m) {
-                print('\n- - - -\nReading: ${m.message}');
                 widget.manga.updateCurrentReading(m.message);
-                // ScaffoldMessenger.of(context).showSnackBar(SnackBar(
-                //   duration: const Duration(seconds: 2),
-                //   content: Text('Reading '+ m.message.split('/').last)));
               }),
           JavascriptChannel(
               name: 'HideUnwantedElems',
               onMessageReceived: (m) {
                 jsRun = 1;
                 _controller!
-                    .evaluateJavascript(ChapterScreenJs.getNextChapUrlJs);
+                    .evaluateJavascript(JavaScript.getNextChapUrlJs);
               }),
           JavascriptChannel(
               name: 'GetNextChapUrl',
               onMessageReceived: (m) async {
                 _controller!.evaluateJavascript(
-                    await ChapterScreenJs.nextChapJs(m.message));
+                    await JavaScript.nextChapJs(m.message));
               }),
         ]),
         onWebViewCreated: (webViewController) {
@@ -79,7 +74,7 @@ class ChapterScreenState extends State<ChapterScreen> {
         onProgress: (_) {
           if (jsRun > 0) return;
           _controller!.evaluateJavascript(
-              ChapterScreenJs.hideUnwantedElemsJsAndScroll(
+              JavaScript.hideUnwantedElemsJsAndScroll(
                 widget.chapterUrl == widget.manga.currentChapterUrl ?
                   widget.manga.currentScrollY : 0));
         },
