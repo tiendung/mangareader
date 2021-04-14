@@ -116,7 +116,7 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
         SplayTreeSet<Manga>(MangaHelpers.sortByUpdatedDateDesc);
     for (var manga in await Manga.loadAll()) {
       if (manga.rate >= MangaConstants.MIN_RATE) sortedMangas.add(manga);
-      print('\n- - - - - - - - - -\n${manga.toStr()}\n\n');
+      // print('\n- - - - - - - - - -\n${manga.toStr()}\n\n');
     }
     state = sortedMangas;
   }
