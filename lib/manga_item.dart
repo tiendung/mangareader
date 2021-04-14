@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:cached_network_image/cached_network_image.dart';
 import 'constants.dart';
 import 'manga_data.dart';
 // import 'manga_isar.dart';
@@ -15,7 +14,7 @@ class MangaItem extends StatelessWidget {
         padding: EdgeInsets.all(3),
         decoration: BoxDecoration(
             image: DecorationImage(
-              image: CachedNetworkImageProvider(manga.coverImageUrl),
+              image: NetworkImage(manga.coverImageUrl),
               fit: BoxFit.cover,
             ),
             borderRadius: BorderRadius.all(Radius.circular(4)),
