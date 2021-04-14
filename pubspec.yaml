@@ -29,8 +29,8 @@ dependencies:
   webview_flutter: ^2.0.3
   flutter_riverpod: ^0.14.0
   
-  # isar: 0.2.0
-  # isar_flutter_libs: 0.2.0
+  isar: 0.2.0
+  isar_flutter_libs: 0.2.0
   floor: ^1.0.1
 
   # The following adds the Cupertino Icons font to your application.
