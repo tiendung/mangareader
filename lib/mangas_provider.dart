@@ -9,7 +9,7 @@ import 'manga_floor.dart';
 
 final mangasProvider =
     StateNotifierProvider<MangasNotifier, SplayTreeSet<Manga>>(
-        (ref) => MangasNotifier()..update());
+        (ref) => MangasNotifier()..totalUpdate());
 
 var mangasCrawling = false;
 
@@ -17,30 +17,34 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
   MangasNotifier()
       : super(SplayTreeSet<Manga>(MangaHelpers.sortByUpdatedDateDesc));
 
-  Future<void> update() async {
-    await updateNewest();
+  Future<void> totalUpdate() async {
+    await updateNewest(MangaConstants.MAX_PAGE);
     mangasCrawling = true;
+    // Update top view mangas
     for (var i = 1; i <= MangaConstants.TOP_MAX_PAGE; i++) {
       await crawl(
           'https://manganelo.com/advanced_search?s=all&orby=topview&page=$i',
           false);
-    }
-    await load();
-    mangasCrawling = false;
-  }
-
-  Future<void> updateNewest() async {
-    if (mangasCrawling) return;
-    mangasCrawling = true;
-    await load();
-    for (var i = 1; i <= MangaConstants.MAX_PAGE; i++) {
-      await crawl('https://manganelo.com/genre-all/$i', true);
       await load();
     }
     mangasCrawling = false;
   }
 
-  Future<void> crawl(String pageUrl, bool isNewest) async {
+  Future<int> updateNewest(int max) async {
+    if (mangasCrawling) return 0;
+    mangasCrawling = true;
+    await load();
+    var total = 0;
+    for (var i = 1; i <= max; i++) {
+      total += await crawl('https://manganelo.com/genre-all/$i', true);
+      await load();
+    }
+    mangasCrawling = false;
+    return total;
+  }
+
+  Future<int> crawl(String pageUrl, bool isNewest) async {
+    var total = 0;
     final now = DateTime.now();
 
     final minRate =
@@ -67,11 +71,6 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
       final found = await Manga.findByUrl(url);
       final isNewManga = found == null;
       final manga = isNewManga ? Manga.newManga() : found!;
-      // var isNewManga = false;
-      // final manga = state.firstWhere((x) => x.url == url, orElse: () {
-      //   isNewManga = true;
-      //   return Manga();
-      // });
 
       final viewsMatch =
           RegExp(r'class="genres-item-view">(.+?)<').firstMatch(s);
@@ -104,11 +103,11 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
         ..rate = rate <= MangaConstants.MAX_RATE ? rate : minRate;
 
       manga.save(isNew: isNewManga);
-      state.add(manga);
-      // if (manga.url == MangaConstants.TRACK_URL)
-      //   print('\n- - - - \nFOUND @ crawl: ${manga.toStr()}\n');
+      total++;
+      // if (manga.url == MangaConstants.TRACK_URL) print('\n- - - - \nFOUND @ crawl: ${manga.toStr()}\n');
       // print('\n- - - - - - - - - -\n$url, $isNewManga, ${manga.toStr()}\n\n');
     });
+    return total;
   }
 
   Future<void> load() async {
