@@ -16,7 +16,7 @@ extension MangaConstants on Manga {
   static const MIN_READ_COUNT = 2;
   static const MAX_RATE = 5.0;
 
-  static const TRACK_URL = 'https://manganelo.com/manga/tm923455';
+  static const TRACK_URL = 'https://manganelo.com/manga/nn922116';
 }
 
 extension MangaMethods on Manga {
@@ -121,7 +121,7 @@ extension MangaHelpers on Manga {
         }
       }
       if (manga.url == MangaConstants.TRACK_URL)
-        print('\n- - -\nFOUND @ groupMangasByUpdatedAt: ${manga.toStr()}\n');
+        print('\n- - -\nFOUND @ groupMangasByUpdatedAt(): ${manga.toStr()}\n');
     }
   }
 }

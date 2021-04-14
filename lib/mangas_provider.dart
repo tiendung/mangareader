@@ -56,15 +56,16 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
     final res = await Dio().get(pageUrl);
     final splits = res.data.toString().split('class="content-genres-item"');
 
-    splits.forEach((s) async {
+    for (var i = 0; i < splits.length; i++) {
+      final s = splits.elementAt(i);
       var urlAndTitleMatch =
           RegExp(r'class="genres-item-name .+?" href="(.+?)" title="(.+?)"')
               .firstMatch(s);
-      if (urlAndTitleMatch == null) return;
+      if (urlAndTitleMatch == null) continue;
 
       final lastChapMatch =
           RegExp(r'class="genres-item-chap .+?" href="(.+?)"').firstMatch(s);
-      if (lastChapMatch == null) return;
+      if (lastChapMatch == null) continue;
 
       final url = urlAndTitleMatch[1]!.trim().toLowerCase();
 
@@ -75,12 +76,12 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
       final viewsMatch =
           RegExp(r'class="genres-item-view">(.+?)<').firstMatch(s);
       final viewsCount = int.parse(viewsMatch![1]!.replaceAll(",", ""));
-      if (isNewManga && viewsCount < minViews) return;
+      if (isNewManga && viewsCount < minViews) continue;
 
       final rateMatch =
           RegExp(r'<em class="genres-item-rate">(.+?)</em>').firstMatch(s);
       final rate = rateMatch != null ? double.parse(rateMatch[1]!) : 4.6;
-      if (isNewManga && rate < minRate) return;
+      if (isNewManga && rate < minRate) continue;
 
       final updatedAtStr =
           RegExp(r'class="genres-item-time">(.+?)<').firstMatch(s)![1]!;
@@ -88,7 +89,7 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
       if (isNewManga &&
           isNewest &&
           now.difference(updatedAt).inDays > MangaConstants.MAX_UPDATED_DAYS)
-        return;
+        continue;
 
       final coverImageMatch =
           RegExp(r'<img class="img-loading" src="(.+?jpg)"').firstMatch(s);
@@ -104,9 +105,9 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
 
       manga.save(isNew: isNewManga);
       total++;
-      // if (manga.url == MangaConstants.TRACK_URL) print('\n- - - - \nFOUND @ crawl: ${manga.toStr()}\n');
+      if (manga.url == MangaConstants.TRACK_URL) print('\n- - - - \nFOUND @ crawl(): ${manga.toStr()} <== $pageUrl\n');
       // print('\n- - - - - - - - - -\n$url, $isNewManga, ${manga.toStr()}\n\n');
-    });
+    }
     return total;
   }
 
