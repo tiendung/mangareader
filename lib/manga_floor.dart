@@ -21,22 +21,19 @@ class Manga {
   DateTime updatedAt = DateTime.now();
 
   void save({bool isNew = true}) async {
+    final mangaDao = (await Db.get()).mangaDao;
     if (isNew)
-      Manga.saveAll([this]);
+      mangaDao.saveAll([this]);
     else
-    (await Db.get()).mangaDao.updateAll([this]);
+      mangaDao.updateAll([this]);
   }
 
-  static Future<Manga> findByUrl(String url) async {
-    return (await Db.get()).mangaDao.findMangaByUrl(url);
+  static Future<Manga?> findByUrl(String url) async {
+    return (await Db.get()).mangaDao.findByUrl(url);
   }
 
   static Future<List<Manga>> loadAll() async {
     return (await Db.get()).mangaDao.loadAll();
-  }
-
-  static saveAll(List<Manga> mangas) async {
-    (await Db.get()).mangaDao.saveAll(mangas);
   }
 }
 
@@ -46,7 +43,7 @@ abstract class MangaDao {
   Future<List<Manga>> loadAll();
 
   @Query('SELECT * FROM Manga WHERE url = :url LIMIT 1')
-  Future<Manga?> findMangaByUrl(String url);
+  Future<Manga?> findByUrl(String url);
 
   @insert
   Future<List<int>> saveAll(List<Manga> mangas);

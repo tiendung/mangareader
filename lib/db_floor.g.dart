@@ -146,7 +146,7 @@ class _$MangaDao extends MangaDao {
   }
 
   @override
-  Future<Manga?> findMangaByUrl(String url) async {
+  Future<Manga?> findByUrl(String url) async {
     return _queryAdapter.query('SELECT * FROM Manga WHERE url = ?1 LIMIT 1',
         mapper: (Map<String, Object?> row) => Manga(), arguments: [url]);
   }

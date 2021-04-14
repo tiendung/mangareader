@@ -43,15 +43,14 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
   Future<void> crawl(String pageUrl, bool isNewest) async {
     final now = DateTime.now();
 
-    final res = await Dio().get(pageUrl);
-    final splits = res.data.toString().split('class="content-genres-item"');
-    final List<Manga> mangas = [];
-
     final minRate =
         isNewest ? MangaConstants.MIN_RATE : MangaConstants.TOP_MIN_RATE;
 
     final minViews =
         isNewest ? MangaConstants.MIN_VIEWS : MangaConstants.TOP_MIN_VIEWS;
+
+    final res = await Dio().get(pageUrl);
+    final splits = res.data.toString().split('class="content-genres-item"');
 
     splits.forEach((s) async {
       var urlAndTitleMatch =
@@ -64,13 +63,15 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
       if (lastChapMatch == null) return;
 
       final url = urlAndTitleMatch[1]!.trim().toLowerCase();
-      // final manga = await Manga.findByUrl(url);
-      // final isNewManga = manga.id == null;
-      var isNewManga = false;
-      final manga = state.firstWhere((x) => x.url == url, orElse: () {
-        isNewManga = true;
-        return Manga();
-      });
+
+      final found = await Manga.findByUrl(url);
+      final isNewManga = found == null;
+      final manga = isNewManga ? Manga() : found!;
+      // var isNewManga = false;
+      // final manga = state.firstWhere((x) => x.url == url, orElse: () {
+      //   isNewManga = true;
+      //   return Manga();
+      // });
 
       final viewsMatch =
           RegExp(r'class="genres-item-view">(.+?)<').firstMatch(s);
@@ -102,14 +103,12 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
         ..updatedAt = updatedAt
         ..rate = rate <= MangaConstants.MAX_RATE ? rate : minRate;
 
-      mangas.add(manga);
+      manga.save(isNew: isNewManga);
+      state.add(manga);
       // if (manga.url == MangaConstants.TRACK_URL)
       //   print('\n- - - - \nFOUND @ crawl: ${manga.toStr()}\n');
       // print('\n- - - - - - - - - -\n$url, $isNewManga, ${manga.toStr()}\n\n');
     });
-
-    Manga.saveAll(mangas);
-    state.addAll(mangas);
   }
 
   Future<void> load() async {
