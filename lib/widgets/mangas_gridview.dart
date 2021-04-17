@@ -32,7 +32,7 @@ class MangasGridView extends StatelessWidget {
                 context,
                 MaterialPageRoute(
                   builder: (_) => ChapterScreen(
-                      manga: manga, chapterUrl: manga.firstChapterUrl()),
+                      manga: manga, chapterUrl: manga.lastChapterUrl),
                 ),
               );
             }, // onLongPress
