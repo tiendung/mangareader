@@ -63,7 +63,7 @@ class _$Db extends Db {
   Future<sqflite.Database> open(String path, List<Migration> migrations,
       [Callback? callback]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 2,
+      version: 3,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
       },
@@ -156,7 +156,7 @@ class _$MangaDao extends MangaDao {
             row['readCount'] as int,
             _dateTimeConverter.decode(row['createdAt'] as int),
             _dateTimeConverter.decode(row['updatedAt'] as int),
-            _dateTimeConverter.decode(row['readAt'] == null ? 0 : row['readAt'] as int)));
+            _dateTimeConverter.decode(row['readAt'] as int)));
   }
 
   @override
@@ -174,7 +174,7 @@ class _$MangaDao extends MangaDao {
             row['readCount'] as int,
             _dateTimeConverter.decode(row['createdAt'] as int),
             _dateTimeConverter.decode(row['updatedAt'] as int),
-            _dateTimeConverter.decode(row['readAt'] == null ? 0 : row['readAt'] as int)),
+            _dateTimeConverter.decode(row['readAt'] as int)),
         arguments: [url]);
   }
 
