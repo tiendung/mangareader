@@ -156,7 +156,7 @@ class _$MangaDao extends MangaDao {
             row['readCount'] as int,
             _dateTimeConverter.decode(row['createdAt'] as int),
             _dateTimeConverter.decode(row['updatedAt'] as int),
-            _dateTimeConverter.decode(row['readAt'] as int)));
+            _dateTimeConverter.decode(row['readAt'] == null ? 0 : row['readAt'] as int)));
   }
 
   @override
@@ -174,7 +174,7 @@ class _$MangaDao extends MangaDao {
             row['readCount'] as int,
             _dateTimeConverter.decode(row['createdAt'] as int),
             _dateTimeConverter.decode(row['updatedAt'] as int),
-            _dateTimeConverter.decode(row['readAt'] as int)),
+            _dateTimeConverter.decode(row['readAt'] == null ? 0 : row['readAt'] as int)),
         arguments: [url]);
   }
 
