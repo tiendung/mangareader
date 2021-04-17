@@ -70,14 +70,9 @@ extension MangaHelpers on Manga {
   static int sortByReadThenRateDesc(a, b) {
     var c = b.readAt.compareTo(a.readAt);
     if (c == 0) c = b.rate.compareTo(a.rate);
+    if (c == 0) c = b.updatedAt.compareTo(a.updatedAt);
     if (c == 0) c = b.viewsCount.compareTo(a.viewsCount);
-    if (c == 0) return a.id.compareTo(b.id);
-    return c;
-  }
-
-  static int sortBy(a, b) {
-    var c = b.updatedAt.compareTo(a.updatedAt);
-    if (c == 0) return a.id.compareTo(b.id);
+    if (c == 0) return a.url.compareTo(b.url);
     return c;
   }
 
