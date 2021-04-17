@@ -36,6 +36,12 @@ class Manga {
       this.readAt,
   );
 
+  // Temporary fix for 
+  // Another exception was thrown: NoSuchMethodError: Class 'Manga' has no instance getter 'id'.
+  // The relevant error-causing widget was:
+  // MyHomePage file:///Users/a1/src/mangareader/lib/main.dart:33:13
+  String get id { return url; }
+
   static Manga newManga() {
     return Manga(
         "", "", "", 0, 0, "", "", 0, 0, DateTime.now(), DateTime.now(),DateTime.utc(1900, 1, 1));
