@@ -19,6 +19,7 @@ class Manga {
 
   DateTime createdAt;
   DateTime updatedAt;
+  DateTime readAt;
 
   Manga(
       this.url,
@@ -31,15 +32,17 @@ class Manga {
       this.currentScrollY,
       this.readCount,
       this.createdAt,
-      this.updatedAt);
+      this.updatedAt,
+      this.readAt,
+  );
 
   static Manga newManga() {
     return Manga(
-        "", "", "", 0, 0, "", "", 0, 0, DateTime.now(), DateTime.now());
+        "", "", "", 0, 0, "", "", 0, 0, DateTime.now(), DateTime.now(),DateTime.utc(1900, 1, 1));
   }
 
   void save({bool isNew = true}) async {
-    final mangaDao = (await Db.get()).mangaDao;
+    final mangaDao = (await getDb()).mangaDao;
     if (isNew)
       mangaDao.saveAll([this]);
     else
@@ -47,11 +50,11 @@ class Manga {
   }
 
   static Future<Manga?> findByUrl(String url) async {
-    return (await Db.get()).mangaDao.findByUrl(url);
+    return (await getDb()).mangaDao.findByUrl(url);
   }
 
   static Future<List<Manga>> loadAll() async {
-    return (await Db.get()).mangaDao.loadAll();
+    return (await getDb()).mangaDao.loadAll();
   }
 }
 

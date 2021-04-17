@@ -19,13 +19,23 @@ class DateTimeConverter extends TypeConverter<DateTime, int> {
 }
 
 @TypeConverters([DateTimeConverter])
-
-@Database(version: 1, entities: [Manga])
+@Database(version: 2, entities: [Manga])
 abstract class Db extends FloorDatabase {
   MangaDao get mangaDao;
-
-  static get() async {
-    return await $FloorDb.databaseBuilder('app.db').build();
-  }
 }
 
+
+  Db? _db;
+  Future<Db> getDb() async {
+    if (_db == null) { // init _db
+     _db = await $FloorDb
+        .databaseBuilder('app.db')
+        .addMigrations([migration1to2])
+        .build();
+    }
+    return _db!;
+  }
+
+final migration1to2 = Migration(1, 2, (database) async {
+  await database.execute('ALTER TABLE manga ADD COLUMN readAt INTEGER NOT NULL');
+});

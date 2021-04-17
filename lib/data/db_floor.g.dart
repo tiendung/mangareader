@@ -63,7 +63,7 @@ class _$Db extends Db {
   Future<sqflite.Database> open(String path, List<Migration> migrations,
       [Callback? callback]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 1,
+      version: 2,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
       },
@@ -78,7 +78,7 @@ class _$Db extends Db {
       },
       onCreate: (database, version) async {
         await database.execute(
-            'CREATE TABLE IF NOT EXISTS `Manga` (`url` TEXT NOT NULL, `title` TEXT NOT NULL, `coverImageUrl` TEXT NOT NULL, `rate` REAL NOT NULL, `viewsCount` INTEGER NOT NULL, `lastChapterUrl` TEXT NOT NULL, `currentChapterUrl` TEXT NOT NULL, `currentScrollY` INTEGER NOT NULL, `readCount` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, PRIMARY KEY (`url`))');
+            'CREATE TABLE IF NOT EXISTS `Manga` (`url` TEXT NOT NULL, `title` TEXT NOT NULL, `coverImageUrl` TEXT NOT NULL, `rate` REAL NOT NULL, `viewsCount` INTEGER NOT NULL, `lastChapterUrl` TEXT NOT NULL, `currentChapterUrl` TEXT NOT NULL, `currentScrollY` INTEGER NOT NULL, `readCount` INTEGER NOT NULL, `createdAt` INTEGER NOT NULL, `updatedAt` INTEGER NOT NULL, `readAt` INTEGER NOT NULL, PRIMARY KEY (`url`))');
 
         await callback?.onCreate?.call(database, version);
       },
@@ -109,7 +109,8 @@ class _$MangaDao extends MangaDao {
                   'currentScrollY': item.currentScrollY,
                   'readCount': item.readCount,
                   'createdAt': _dateTimeConverter.encode(item.createdAt),
-                  'updatedAt': _dateTimeConverter.encode(item.updatedAt)
+                  'updatedAt': _dateTimeConverter.encode(item.updatedAt),
+                  'readAt': _dateTimeConverter.encode(item.readAt)
                 }),
         _mangaUpdateAdapter = UpdateAdapter(
             database,
@@ -126,7 +127,8 @@ class _$MangaDao extends MangaDao {
                   'currentScrollY': item.currentScrollY,
                   'readCount': item.readCount,
                   'createdAt': _dateTimeConverter.encode(item.createdAt),
-                  'updatedAt': _dateTimeConverter.encode(item.updatedAt)
+                  'updatedAt': _dateTimeConverter.encode(item.updatedAt),
+                  'readAt': _dateTimeConverter.encode(item.readAt)
                 });
 
   final sqflite.DatabaseExecutor database;
@@ -153,12 +155,13 @@ class _$MangaDao extends MangaDao {
             row['currentScrollY'] as int,
             row['readCount'] as int,
             _dateTimeConverter.decode(row['createdAt'] as int),
-            _dateTimeConverter.decode(row['updatedAt'] as int)));
+            _dateTimeConverter.decode(row['updatedAt'] as int),
+            _dateTimeConverter.decode(row['readAt'] as int)));
   }
 
   @override
   Future<Manga?> findByUrl(String url) async {
-    return _queryAdapter.query('SELECT * FROM Manga WHERE url = ?1 LIMIT 1',
+    return _queryAdapter.query('SELECT * FROM Manga WHERE url = ?1',
         mapper: (Map<String, Object?> row) => Manga(
             row['url'] as String,
             row['title'] as String,
@@ -170,7 +173,8 @@ class _$MangaDao extends MangaDao {
             row['currentScrollY'] as int,
             row['readCount'] as int,
             _dateTimeConverter.decode(row['createdAt'] as int),
-            _dateTimeConverter.decode(row['updatedAt'] as int)),
+            _dateTimeConverter.decode(row['updatedAt'] as int),
+            _dateTimeConverter.decode(row['readAt'] as int)),
         arguments: [url]);
   }
 

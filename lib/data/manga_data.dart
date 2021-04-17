@@ -1,6 +1,5 @@
 import 'dart:collection';
 import 'dart:io';
-// import 'manga_isar.dart';
 import 'manga_floor.dart';
 
 extension MangaConstants on Manga {
@@ -50,27 +49,26 @@ extension MangaMethods on Manga {
   void updateCurrentReading(String chapterUrl) async {
     currentChapterUrl = chapterUrl;
     readCount++;
+    readAt = DateTime.now();
     save(isNew: false);
   }
 
   updateCurrentScrollY(String scrollY) {
     currentScrollY = double.parse(scrollY).floor();
+    readAt = DateTime.now();
     save(isNew: false);
   }
 }
 
 extension MangaHelpers on Manga {
   static int sortByUpdatedDateDesc(a, b) {
-    // if (c == 0) c = b.readCount.compareTo(a.readCount);
-    // if (c == 0) c = b.rate.compareTo(a.rate);
-    // if (c == 0) c = b.viewsCount.compareTo(a.viewsCount);
     var c = b.updatedAt.compareTo(a.updatedAt);
     if (c == 0) return a.url.compareTo(b.url);
     return c;
   }
 
   static int sortByReadThenRateDesc(a, b) {
-    var c = b.readCount.compareTo(a.readCount);
+    var c = b.readAt.compareTo(a.readAt);
     if (c == 0) c = b.rate.compareTo(a.rate);
     if (c == 0) c = b.viewsCount.compareTo(a.viewsCount);
     if (c == 0) return a.id.compareTo(b.id);
@@ -78,9 +76,6 @@ extension MangaHelpers on Manga {
   }
 
   static int sortBy(a, b) {
-    // if (c == 0) c = b.readCount.compareTo(a.readCount);
-    // if (c == 0) c = b.rate.compareTo(a.rate);
-    // if (c == 0) c = b.viewsCount.compareTo(a.viewsCount);
     var c = b.updatedAt.compareTo(a.updatedAt);
     if (c == 0) return a.id.compareTo(b.id);
     return c;
