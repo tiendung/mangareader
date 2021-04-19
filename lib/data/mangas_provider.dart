@@ -101,7 +101,7 @@ class MangasNotifier extends StateNotifier<SplayTreeSet<Manga>> {
         ..coverImageUrl = coverImageMatch![1]!
         ..viewsCount = viewsCount
         ..updatedAt = updatedAt
-        ..rate = rate <= MangaConstants.MAX_RATE ? rate : minRate;
+        ..rate = rate <= MangaConstants.MAX_RATE ? rate : MangaConstants.MAX_RATE;
 
       manga.save(isNew: isNewManga);
       total++;

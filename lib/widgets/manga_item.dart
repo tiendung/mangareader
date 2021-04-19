@@ -41,7 +41,7 @@ class MangaItem extends StatelessWidget {
               // maxLines: 4,
               style: TextStyle(
                 // fontWeight: FontWeight.bold,
-                fontSize: 15,
+                fontSize: 17,
                 backgroundColor: Constants.backgroundColor,
                 color: Colors.white,
               ),

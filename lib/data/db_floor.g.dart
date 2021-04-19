@@ -63,7 +63,7 @@ class _$Db extends Db {
   Future<sqflite.Database> open(String path, List<Migration> migrations,
       [Callback? callback]) async {
     final databaseOptions = sqflite.OpenDatabaseOptions(
-      version: 3,
+      version: 2,
       onConfigure: (database) async {
         await database.execute('PRAGMA foreign_keys = ON');
       },
@@ -142,8 +142,9 @@ class _$MangaDao extends MangaDao {
   final UpdateAdapter<Manga> _mangaUpdateAdapter;
 
   @override
-  Future<List<Manga>> loadAll() async {
-    return _queryAdapter.queryList('SELECT * FROM Manga',
+  Future<List<Manga>> loadAll(int minUpdatedAt) async {
+    return _queryAdapter.queryList(
+        'SELECT * FROM Manga WHERE `updatedAt` >= ?1',
         mapper: (Map<String, Object?> row) => Manga(
             row['url'] as String,
             row['title'] as String,
@@ -156,7 +157,8 @@ class _$MangaDao extends MangaDao {
             row['readCount'] as int,
             _dateTimeConverter.decode(row['createdAt'] as int),
             _dateTimeConverter.decode(row['updatedAt'] as int),
-            _dateTimeConverter.decode(row['readAt'] as int)));
+            _dateTimeConverter.decode(row['readAt'] as int)),
+        arguments: [minUpdatedAt]);
   }
 
   @override

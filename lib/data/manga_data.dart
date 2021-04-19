@@ -3,6 +3,8 @@ import 'dart:io';
 import 'manga_floor.dart';
 
 extension MangaConstants on Manga {
+  static const MAX_DAYS_AGO = 7;
+
   // ignore: non_constant_identifier_names
   static final MAX_PAGE = Platform.isAndroid ? 65 : 5;
   static const MIN_RATE = 4.6;
@@ -98,7 +100,8 @@ extension MangaHelpers on Manga {
     map["Recommend"] = SplayTreeSet<Manga>(MangaHelpers.sortByReadThenRateDesc);
     for (int i = 0; i < mangas.length; i++) {
       final manga = mangas.elementAt(i);
-      if (manga.readCount >= MangaConstants.MIN_READ_COUNT) {
+      if (manga.readCount >= MangaConstants.MIN_READ_COUNT &&
+          manga.lastChapterUrl != manga.currentChapterUrl) {
         map["Recommend"]!.add(manga);
       } else {
         if (manga.rate >= MangaConstants.TOP_MIN_RATE &&

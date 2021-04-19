@@ -14,3 +14,5 @@ https://blog.codemagic.io/flutter-state-management-with-riverpod/
 
 https://resocoder.com/2021/01/23/search-bar-in-flutter-logic-material-ui/
 https://github.com/bnxm/material_floating_search_bar
+https://github.com/lcuis/search_choices
+https://github.com/jesusrp98/search_page/tree/master/example

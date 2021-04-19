@@ -1,5 +1,6 @@
 import 'package:floor/floor.dart';
 import 'db_floor.dart';
+import 'manga_data.dart';
 
 @entity
 class Manga {
@@ -22,23 +23,23 @@ class Manga {
   DateTime readAt;
 
   Manga(
-      this.url,
-      this.title,
-      this.coverImageUrl,
-      this.rate,
-      this.viewsCount,
-      this.lastChapterUrl,
-      this.currentChapterUrl,
-      this.currentScrollY,
-      this.readCount,
-      this.createdAt,
-      this.updatedAt,
-      this.readAt,
+    this.url,
+    this.title,
+    this.coverImageUrl,
+    this.rate,
+    this.viewsCount,
+    this.lastChapterUrl,
+    this.currentChapterUrl,
+    this.currentScrollY,
+    this.readCount,
+    this.createdAt,
+    this.updatedAt,
+    this.readAt,
   );
 
   static Manga newManga() {
-    return Manga(
-        "", "", "", 0, 0, "", "", 0, 0, DateTime.now(), DateTime.now(),DateTime.utc(1900, 1, 1));
+    return Manga("", "", "", 0, 0, "", "", 0, 0, DateTime.now(), DateTime.now(),
+        DateTime.utc(1900, 1, 1));
   }
 
   void save({bool isNew = true}) async {
@@ -53,15 +54,17 @@ class Manga {
     return (await getDb()).mangaDao.findByUrl(url);
   }
 
-  static Future<List<Manga>> loadAll() async {
-    return (await getDb()).mangaDao.loadAll();
+  static Future<List<Manga>> loadAll({int daysAgo = MangaConstants.MAX_DAYS_AGO}) async {
+    int nowInMs = DateTime.now().millisecondsSinceEpoch;
+    int daysAgoInMs = Duration(days: daysAgo).inMilliseconds;
+    return (await getDb()).mangaDao.loadAll(nowInMs - daysAgoInMs);
   }
 }
 
 @dao
 abstract class MangaDao {
-  @Query('SELECT * FROM Manga')
-  Future<List<Manga>> loadAll();
+  @Query('SELECT * FROM Manga WHERE `updatedAt` >= :minUpdatedAt')
+  Future<List<Manga>> loadAll(int minUpdatedAt);
 
   @Query('SELECT * FROM Manga WHERE url = :url')
   Future<Manga?> findByUrl(String url);

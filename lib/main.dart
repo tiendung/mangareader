@@ -80,10 +80,10 @@ class MyHomePage extends ConsumerWidget {
                       ),
                     ),
                     content: Container(
-                      height: index == 0 ? 480 : 740,
+                      height: 620,
                       child: MangasGridView(
                         mangas: map.values.elementAt(index),
-                        count: index == 0 ? 3 : 4,
+                        count: 3,
                       ),
                     ),
                   );
