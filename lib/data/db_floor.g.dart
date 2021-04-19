@@ -144,7 +144,7 @@ class _$MangaDao extends MangaDao {
   @override
   Future<List<Manga>> loadAll(int minUpdatedAt) async {
     return _queryAdapter.queryList(
-        'SELECT * FROM Manga WHERE `updatedAt` >= ?1',
+        'SELECT * FROM Manga WHERE    `updatedAt` >= ?1 OR `rate` >= 4.8',
         mapper: (Map<String, Object?> row) => Manga(
             row['url'] as String,
             row['title'] as String,

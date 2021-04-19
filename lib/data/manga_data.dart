@@ -85,10 +85,10 @@ extension MangaHelpers on Manga {
       return "Two Days Ago";
     } else if (d <= 7) {
       return "Last Week";
-    } else if (d <= 14) {
-      return "Last Two Weeks";
-    } else if (d <= 30) {
-      return "Last Month";
+    // } else if (d <= 14) {
+    //   return "Last Two Weeks";
+    // } else if (d <= 30) {
+    //   return "Last Month";
     } else {
       return "";
     }

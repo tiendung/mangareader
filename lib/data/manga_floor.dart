@@ -54,7 +54,8 @@ class Manga {
     return (await getDb()).mangaDao.findByUrl(url);
   }
 
-  static Future<List<Manga>> loadAll({int daysAgo = MangaConstants.MAX_DAYS_AGO}) async {
+  static Future<List<Manga>> loadAll(
+      {int daysAgo = MangaConstants.MAX_DAYS_AGO}) async {
     int nowInMs = DateTime.now().millisecondsSinceEpoch;
     int daysAgoInMs = Duration(days: daysAgo).inMilliseconds;
     return (await getDb()).mangaDao.loadAll(nowInMs - daysAgoInMs);
@@ -63,7 +64,8 @@ class Manga {
 
 @dao
 abstract class MangaDao {
-  @Query('SELECT * FROM Manga WHERE `updatedAt` >= :minUpdatedAt')
+  @Query('''SELECT * FROM Manga WHERE 
+  `updatedAt` >= :minUpdatedAt OR `rate` >= ${MangaConstants.TOP_MIN_RATE}''')
   Future<List<Manga>> loadAll(int minUpdatedAt);
 
   @Query('SELECT * FROM Manga WHERE url = :url')
